@@ -84,18 +84,26 @@ export default function Cardapio() {
     removerItem,
   } = useCarrinho();
 
-  useEffect(() => {
-    getPizzaria(pizzariaId)
-      .then((data) => {
-        setPizzaria(data);
-        document.title = data.nome ? `${data.nome}` : 'Cardápio';
-        const cardapio = data.cardapio || [];
-        setProdutos(cardapio);
-        setCategorias(extrairCategorias(cardapio));
-      })
-      .catch((err) => setErro(err.message))
-      .finally(() => setLoading(false));
-  }, [pizzariaId]);
+useEffect(() => {
+  async function carregar() {
+    try {
+      const pizzariaData = await getPizzaria(pizzariaId);
+      setPizzaria(pizzariaData);
+      document.title = pizzariaData.nome ? `${pizzariaData.nome} 🍕` : 'Cardápio';
+
+      const res = await fetch(`${API}/produtos?pizzariaId=${pizzariaId}`);
+      const produtosData = await res.json();
+      if (!res.ok) throw new Error(produtosData.erro || 'Erro ao buscar produtos');
+      setProdutos(produtosData);
+      setCategorias(extrairCategorias(produtosData));
+    } catch (err) {
+      setErro(err.message);
+    } finally {
+      setLoading(false);
+    }
+  }
+  carregar();
+}, [pizzariaId]);
 
   const produtosFiltrados = useMemo(() => {
     return produtos.filter((p) => {

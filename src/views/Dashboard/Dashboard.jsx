@@ -246,7 +246,14 @@ export default function Dashboard() {
             <div className="dashboard-subtitulo">{usuario?.nome}</div>
           </div>
         </div>
-        <button className="btn-sair" onClick={sair}>Sair</button>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+          {perfil === 'admin' && (
+            <button className="btn-perfil-pizzaria" onClick={() => navigate(`/perfil/${pizzariaId}`)} title="Editar perfil da pizzaria">
+              🍕
+            </button>
+          )}
+          <button className="btn-sair" onClick={sair}>Sair</button>
+        </div>
       </div>
 
       <div className="dashboard-layout">
