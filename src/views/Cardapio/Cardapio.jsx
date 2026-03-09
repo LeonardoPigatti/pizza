@@ -2,40 +2,38 @@ import { useState, useEffect, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import './Cardapio.css';
 import ModalPizza from '../Modal/Modalpizza.jsx';
+import ModalProduto from '../Modal/Modalproduto.jsx';
 import Carrinho, { CarrinhoFAB } from '../Carrinho/Carrinho.jsx';
 import { useCarrinho } from '../Carrinho/useCarrinho.js';
 
 const API = import.meta.env.VITE_API_URL || 'http://localhost:3001/api';
 
 function formatarPreco(valor) {
-  return `R$ ${valor.toFixed(2).replace('.', ',')}`;
+  return `R$ ${Number(valor).toFixed(2).replace('.', ',')}`;
 }
 
-function precoMinimo(tamanhos) {
-  if (!tamanhos?.length) return 0;
-  return Math.min(...tamanhos.map((t) => t.preco));
-}
-
-function extrairCategorias(produtos) {
-  const todas = produtos.flatMap((p) => p.categorias || []);
-  return [...new Set(todas)];
+function precoMinimo(produto) {
+  if (produto.tamanhos?.length > 0)
+    return Math.min(...produto.tamanhos.map(t => t.preco));
+  return produto.preco || 0;
 }
 
 function ProdutoCard({ produto, onEscolher }) {
   return (
     <div className="produto-card">
-      {produto.imagem ? (
-        <img className="produto-img" src={produto.imagem} alt={produto.nome} />
-      ) : (
-        <div className="produto-img-placeholder">🍕</div>
-      )}
+      {produto.imagem
+        ? <img className="produto-img" src={produto.imagem} alt={produto.nome} />
+        : <div className="produto-img-placeholder">🍽️</div>
+      }
       <div className="produto-body">
         <h3 className="produto-nome">{produto.nome}</h3>
         <p className="produto-descricao">{produto.descricao}</p>
         <div className="produto-footer">
           <div>
-            <div className="produto-preco-label">A partir de</div>
-            <div className="produto-preco">{formatarPreco(precoMinimo(produto.tamanhos))}</div>
+            <div className="produto-preco-label">
+              {produto.tamanhos?.length > 0 ? 'A partir de' : 'Preço'}
+            </div>
+            <div className="produto-preco">{formatarPreco(precoMinimo(produto))}</div>
           </div>
           <button className="btn-escolher" onClick={() => onEscolher(produto)}>
             Escolher
@@ -50,15 +48,15 @@ export default function Cardapio() {
   const { pizzariaId } = useParams();
   const navigate = useNavigate();
 
-  const [pizzaria, setPizzaria]             = useState(null);
-  const [produtos, setProdutos]             = useState([]);
-  const [categorias, setCategorias]         = useState([]);
-  const [categoriaAtiva, setCategoriaAtiva] = useState('Todas');
-  const [busca, setBusca]                   = useState('');
-  const [loading, setLoading]               = useState(true);
-  const [erro, setErro]                     = useState(null);
-  const [modalProduto, setModalProduto]     = useState(null);
-  const [carrinhoAberto, setCarrinhoAberto] = useState(false);
+  const [pizzaria, setPizzaria]         = useState(null);
+  const [produtos, setProdutos]         = useState([]);
+  const [loading, setLoading]           = useState(true);
+  const [erro, setErro]                 = useState(null);
+  const [categoriaAtiva, setCategoriaAtiva]   = useState('Todas');
+  const [subcatAtiva, setSubcatAtiva]         = useState('Todas');
+  const [busca, setBusca]               = useState('');
+  const [modalProduto, setModalProduto] = useState(null);
+  const [carrinhoAberto, setCarrinhoAberto]   = useState(false);
 
   const { itens, totalItens, subtotal, adicionarItem, alterarQuantidade, removerItem } = useCarrinho();
 
@@ -69,17 +67,13 @@ export default function Cardapio() {
           fetch(`${API}/pizzarias/${pizzariaId}`),
           fetch(`${API}/produtos?pizzariaId=${pizzariaId}`),
         ]);
-
         const pizzariaData = await resPizzaria.json();
         if (!resPizzaria.ok) throw new Error(pizzariaData.erro || 'Pizzaria não encontrada');
-
         const produtosData = await resProdutos.json();
         if (!resProdutos.ok) throw new Error(produtosData.erro || 'Erro ao buscar produtos');
-
         setPizzaria(pizzariaData);
         document.title = pizzariaData.nome ? `${pizzariaData.nome} 🍕` : 'Cardápio';
-        setProdutos(produtosData);
-        setCategorias(extrairCategorias(produtosData));
+        setProdutos(produtosData.filter(p => p.ativo !== false));
       } catch (err) {
         setErro(err.message);
       } finally {
@@ -89,19 +83,40 @@ export default function Cardapio() {
     carregar();
   }, [pizzariaId]);
 
+  // Categorias únicas
+  const categorias = useMemo(() => {
+    const cats = [...new Set(produtos.map(p => p.categoria).filter(Boolean))];
+    return ['Todas', ...cats];
+  }, [produtos]);
+
+  // Subcategorias da categoria ativa
+  const subcategorias = useMemo(() => {
+    if (categoriaAtiva === 'Todas') return [];
+    const subs = produtos
+      .filter(p => p.categoria === categoriaAtiva)
+      .flatMap(p => p.subcategorias || []);
+    return [...new Set(subs)];
+  }, [produtos, categoriaAtiva]);
+
+  // Produtos filtrados
   const produtosFiltrados = useMemo(() => {
-    return produtos.filter((p) => {
-      const porCategoria = categoriaAtiva === 'Todas' || p.categorias?.includes(categoriaAtiva);
-      const porBusca = busca.trim() === '' ||
+    return produtos.filter(p => {
+      const porCategoria = categoriaAtiva === 'Todas' || p.categoria === categoriaAtiva;
+      const porSubcat    = subcatAtiva === 'Todas' || p.subcategorias?.includes(subcatAtiva);
+      const porBusca     = busca.trim() === '' ||
         p.nome.toLowerCase().includes(busca.toLowerCase()) ||
         p.descricao?.toLowerCase().includes(busca.toLowerCase());
-      return porCategoria && porBusca;
+      return porCategoria && porSubcat && porBusca;
     });
-  }, [produtos, categoriaAtiva, busca]);
+  }, [produtos, categoriaAtiva, subcatAtiva, busca]);
 
-  function contarCategoria(cat) {
-    if (cat === 'Todas') return produtos.length;
-    return produtos.filter((p) => p.categorias?.includes(cat)).length;
+  function handleCategoriaAtiva(cat) {
+    setCategoriaAtiva(cat);
+    setSubcatAtiva('Todas');
+  }
+
+  function handleEscolher(produto) {
+    setModalProduto(produto);
   }
 
   function handleAdicionarAoPedido(item) {
@@ -116,37 +131,25 @@ export default function Cardapio() {
 
   const endereco = pizzaria?.endereco;
   const enderecoTexto = endereco?.rua
-    ? `${endereco.rua}, ${endereco.numero} - ${endereco.bairro}`
-    : null;
-
-  const abas = ['Todas', ...categorias];
+    ? `${endereco.rua}, ${endereco.numero} - ${endereco.bairro}` : null;
 
   return (
     <div>
-
       {/* Banner */}
       <div className="banner">
-        <img
-          className="banner-img"
+        <img className="banner-img"
           src={pizzaria?.banner || 'https://images.unsplash.com/photo-1513104890138-7c749659a591?w=1400&q=80'}
-          alt="Banner da pizzaria"
-        />
+          alt="Banner" />
         <div className="banner-overlay">
           <div className="banner-inner">
-            <h1 className="banner-nome">{pizzaria?.nome || 'Pizzaria'}</h1>
-            {pizzaria?.descricao && (
-              <p className="banner-slogan">{pizzaria.descricao}</p>
-            )}
+            <h1 className="banner-nome">{pizzaria?.nome || 'Cardápio'}</h1>
+            {pizzaria?.descricao && <p className="banner-slogan">{pizzaria.descricao}</p>}
             <div className="banner-infos">
               <span className="banner-info">⭐ 4.8</span>
               <span className="banner-info">🕐 {pizzaria?.tempoMedioEntrega || 40} min</span>
-              {enderecoTexto && (
-                <span className="banner-info">📍 {enderecoTexto}</span>
-              )}
+              {enderecoTexto && <span className="banner-info">📍 {enderecoTexto}</span>}
               {pizzaria?.horarios?.abertura && (
-                <span className="banner-info">
-                  🕒 {pizzaria.horarios.abertura} – {pizzaria.horarios.fechamento}
-                </span>
+                <span className="banner-info">🕒 {pizzaria.horarios.abertura} – {pizzaria.horarios.fechamento}</span>
               )}
             </div>
           </div>
@@ -158,54 +161,79 @@ export default function Cardapio() {
         <div className="busca-inner">
           <div className="busca-input-wrapper">
             <span className="busca-icon">🔍</span>
-            <input
-              className="busca-input"
-              type="text"
-              placeholder="Buscar pizza..."
-              value={busca}
-              onChange={(e) => setBusca(e.target.value)}
-            />
+            <input className="busca-input" type="text" placeholder="Buscar..."
+              value={busca} onChange={e => setBusca(e.target.value)} />
           </div>
         </div>
       </div>
 
-      {/* Categorias */}
+      {/* Abas de categoria */}
       <div className="categorias-bar-wrapper">
         <div className="categorias-bar">
-          {abas.map((cat) => (
+          {categorias.map(cat => (
             <button
               key={cat}
               className={`categoria-tab ${categoriaAtiva === cat ? 'ativa' : ''}`}
-              onClick={() => setCategoriaAtiva(cat)}
+              onClick={() => handleCategoriaAtiva(cat)}
             >
-              {cat} ({contarCategoria(cat)})
+              {cat}
+              {cat !== 'Todas' && (
+                <span className="cat-count">
+                  {produtos.filter(p => p.categoria === cat).length}
+                </span>
+              )}
             </button>
           ))}
         </div>
       </div>
 
+      {/* Subabas de subcategoria */}
+      {subcategorias.length > 0 && (
+        <div className="subcategorias-bar-wrapper">
+          <div className="subcategorias-bar">
+            <button
+              className={`subcat-tab ${subcatAtiva === 'Todas' ? 'ativa' : ''}`}
+              onClick={() => setSubcatAtiva('Todas')}
+            >
+              Todas
+            </button>
+            {subcategorias.map(sub => (
+              <button
+                key={sub}
+                className={`subcat-tab ${subcatAtiva === sub ? 'ativa' : ''}`}
+                onClick={() => setSubcatAtiva(sub)}
+              >
+                {sub}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+
       {/* Produtos */}
       <div className="cardapio-container">
         <div className="produtos-grid">
-          {loading && (
-            <div className="estado-loading">
-              <div className="spinner" />
-              <p>Carregando cardápio...</p>
-            </div>
-          )}
-          {erro && <div className="estado-vazio"><p>⚠️ Erro: {erro}</p></div>}
+          {loading && <div className="estado-loading"><div className="spinner" /><p>Carregando...</p></div>}
+          {erro     && <div className="estado-vazio"><p>⚠️ {erro}</p></div>}
           {!loading && !erro && produtosFiltrados.length === 0 && (
-            <div className="estado-vazio"><p>🍕 Nenhuma pizza encontrada.</p></div>
+            <div className="estado-vazio"><p>Nenhum produto encontrado.</p></div>
           )}
-          {!loading && !erro && produtosFiltrados.map((p) => (
-            <ProdutoCard key={p._id} produto={p} onEscolher={setModalProduto} />
+          {!loading && !erro && produtosFiltrados.map(p => (
+            <ProdutoCard key={p._id} produto={p} onEscolher={handleEscolher} />
           ))}
         </div>
       </div>
 
-      {/* Modal */}
-      {modalProduto && (
+      {/* Modal — pizza tem sabores/tamanhos, outros têm preço único */}
+      {modalProduto && modalProduto.temSabores && (
         <ModalPizza
+          produto={modalProduto}
+          onFechar={() => setModalProduto(null)}
+          onAdicionarAoPedido={handleAdicionarAoPedido}
+        />
+      )}
+      {modalProduto && !modalProduto.temSabores && (
+        <ModalProduto
           produto={modalProduto}
           onFechar={() => setModalProduto(null)}
           onAdicionarAoPedido={handleAdicionarAoPedido}
@@ -213,18 +241,15 @@ export default function Cardapio() {
       )}
 
       <CarrinhoFAB totalItens={totalItens} onClick={() => setCarrinhoAberto(true)} />
-
       {carrinhoAberto && (
         <Carrinho
-          itens={itens}
-          subtotal={subtotal}
+          itens={itens} subtotal={subtotal}
           onFechar={() => setCarrinhoAberto(false)}
           onAlterarQtd={alterarQuantidade}
           onRemover={removerItem}
           onFinalizarPedido={handleFinalizarPedido}
         />
       )}
-
     </div>
   );
 }

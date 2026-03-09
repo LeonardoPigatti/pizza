@@ -1,9 +1,13 @@
 const router   = require('express').Router();
 const Pizzaria = require('../models/Pizzaria.model');
+const mongoose = require('mongoose');
 
 // GET /api/pizzarias/:id
 router.get('/:id', async (req, res) => {
   try {
+    if (!mongoose.Types.ObjectId.isValid(req.params.id))
+      return res.status(400).json({ erro: `ID inválido: "${req.params.id}"` });
+
     const pizzaria = await Pizzaria.findById(req.params.id);
     if (!pizzaria) return res.status(404).json({ erro: 'Pizzaria não encontrada' });
     res.json(pizzaria);
@@ -12,9 +16,12 @@ router.get('/:id', async (req, res) => {
   }
 });
 
-// PATCH /api/pizzarias/:id — atualiza perfil
+// PATCH /api/pizzarias/:id
 router.patch('/:id', async (req, res) => {
   try {
+    if (!mongoose.Types.ObjectId.isValid(req.params.id))
+      return res.status(400).json({ erro: `ID inválido: "${req.params.id}"` });
+
     const pizzaria = await Pizzaria.findByIdAndUpdate(
       req.params.id,
       req.body,

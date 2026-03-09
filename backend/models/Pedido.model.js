@@ -7,12 +7,14 @@ const AdicionalSelecionadoSchema = new mongoose.Schema({
 }, { _id: false });
 
 const PizzaPedidoSchema = new mongoose.Schema({
-  produtoId:  { type: mongoose.Schema.Types.ObjectId, ref: 'Produto', required: true },
-  tamanho:    { type: String, enum: ['Pequena', 'Media', 'Grande'], required: true },
-  sabores:    { type: [String], required: true },
-  adicionais: { type: [AdicionalSelecionadoSchema], default: [] },
-  quantidade: { type: Number, default: 1 },
-  observacao: { type: String, default: '' },
+  produtoId:   { type: mongoose.Schema.Types.ObjectId, ref: 'Produto', required: true },
+  nomeProduto: { type: String, default: '' },
+  tamanho:     { type: String, default: null },   // null para produtos sem tamanho (bebidas, etc)
+  preco:       { type: Number, default: 0 },
+  sabores:     { type: [String], default: [] },
+  adicionais:  { type: [AdicionalSelecionadoSchema], default: [] },
+  quantidade:  { type: Number, default: 1 },
+  observacao:  { type: String, default: '' },
 }, { _id: false });
 
 const EnderecoEntregaSchema = new mongoose.Schema({
@@ -39,12 +41,11 @@ const CupomSchema = new mongoose.Schema({
   valido:      { type: Boolean, default: true },
 }, { _id: false });
 
-// Histórico de retorno de status
 const HistoricoStatusSchema = new mongoose.Schema({
-  de:        { type: String, required: true },
-  para:      { type: String, required: true },
-  motivo:    { type: String, required: true },
-  criadoEm:  { type: Date, default: Date.now },
+  de:       { type: String, required: true },
+  para:     { type: String, required: true },
+  motivo:   { type: String, required: true },
+  criadoEm: { type: Date, default: Date.now },
 }, { _id: false });
 
 const PedidoSchema = new mongoose.Schema({
