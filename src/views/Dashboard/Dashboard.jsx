@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import './Dashboard.css';
 import Chat from '../Chat/Chat.jsx';
@@ -16,7 +16,7 @@ function formatarData(dataISO) {
   return new Date(dataISO).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric' });
 }
 function calcularTotalItem(pizza) {
-  const preco = pizza.produtoId?.tamanhos?.find(t => t.tamanho === pizza.tamanho)?.preco || 0;
+  const preco = pizza.preco || pizza.produtoId?.tamanhos?.find(t => t.tamanho === pizza.tamanho)?.preco || 0;
   const adicionais = pizza.adicionais?.reduce((s, a) => s + a.preco * a.quantidade, 0) || 0;
   return (preco + adicionais) * pizza.quantidade;
 }
@@ -34,11 +34,11 @@ const TODOS_STATUS = [
 ];
 
 const FILTROS_ADMIN = [
-  { label: 'Todos',               valor: 'todos' },
-  { label: 'Aguardando',          valor: 'Aguardando confirmacao' },
-  { label: 'Preparando',          valor: 'Preparando' },
-  { label: 'Saiu para entrega',   valor: 'Saiu para entrega' },
-  { label: 'Concluido',           valor: 'Concluido' },
+  { label: 'Todos',             valor: 'todos' },
+  { label: 'Aguardando',        valor: 'Aguardando confirmacao' },
+  { label: 'Preparando',        valor: 'Preparando' },
+  { label: 'Saiu para entrega', valor: 'Saiu para entrega' },
+  { label: 'Concluido',         valor: 'Concluido' },
 ];
 
 const FILTROS_MOTOBOY = [
@@ -48,8 +48,8 @@ const FILTROS_MOTOBOY = [
 ];
 
 const PROXIMO_STATUS = {
-  'Aguardando confirmacao': { label: 'Confirmar e Preparar', valor: 'Preparando' },
-  'Preparando':             { label: 'Saiu para Entrega',    valor: 'Saiu para entrega' },
+  'Aguardando confirmacao': { label: 'Confirmar e Preparar',  valor: 'Preparando' },
+  'Preparando':             { label: 'Saiu para Entrega',     valor: 'Saiu para entrega' },
   'Saiu para entrega':      { label: 'Marcar como Concluido', valor: 'Concluido' },
   'Concluido':              null,
 };
@@ -62,10 +62,8 @@ function statusClass(status) {
   return '';
 }
 
-// ── Modal de justificativa ──
 function ModalRetrocesso({ pedido, novoStatus, onConfirmar, onCancelar }) {
   const [motivo, setMotivo] = useState('');
-
   return (
     <div className="modal-overlay" onClick={onCancelar}>
       <div className="modal-retrocesso" onClick={e => e.stopPropagation()}>
@@ -107,22 +105,55 @@ export default function Dashboard() {
   const { pizzariaId } = useParams();
   const navigate       = useNavigate();
 
-  const [pedidos, setPedidos]             = useState([]);
-  const [loading, setLoading]             = useState(true);
-  const [erro, setErro]                   = useState(null);
-  const [filtro, setFiltro]               = useState('todos');
-  const [usuario, setUsuario]             = useState(null);
-  const [chatPedidoId, setChatPedidoId]   = useState(null);
-
-  // Modal de retrocesso
+  const [pedidos, setPedidos]           = useState([]);
+  const [loading, setLoading]           = useState(true);
+  const [erro, setErro]                 = useState(null);
+  const [filtro, setFiltro]             = useState('todos');
+  const [usuario, setUsuario]           = useState(null);
+  const [chatPedidoId, setChatPedidoId] = useState(null);
   const [modalRetrocesso, setModalRetrocesso] = useState(null);
-  const [menuAberto, setMenuAberto]           = useState(false); // { pedido, novoStatus }
+  const [menuAberto, setMenuAberto]     = useState(false);
 
-  const perfil = usuario?.perfil || 'admin';
-  const autorLabel = perfil === 'motoboy'
-    ? '🛵 Motoboy'
-    : '🍕 Pizzaria';
+  // pedidoId → true quando há mensagem não lida
+  const [naoLidas, setNaoLidas] = useState({});
+  // ref para saber quais pedidos já tinham mensagens (evita marcar histórico inicial)
+  const mensagensIniciais = useRef({});
+
+  const perfil    = usuario?.perfil || 'admin';
+  const autorLabel = perfil === 'motoboy' ? '🛵 Motoboy' : '🍕 Pizzaria';
   const chat = useChat(chatPedidoId, 'pizzaria', autorLabel, perfil);
+
+  // Quando chega nova mensagem via socket, marca como não lida se o chat não estiver aberto
+  useEffect(() => {
+    if (!chatPedidoId) return;
+    if (!chat.mensagens.length) return;
+
+    const ultima = chat.mensagens[chat.mensagens.length - 1];
+    // só marca se for do cliente (autor !== 'pizzaria')
+    if (ultima.autor === 'pizzaria') return;
+
+    // se o chat desse pedido está aberto, não marca
+    if (chatPedidoId === ultima.pedidoId) return;
+
+    setNaoLidas(prev => ({ ...prev, [chatPedidoId]: true }));
+  }, [chat.mensagens]);
+
+  // Escuta mensagens de TODOS os pedidos via socket global
+  useEffect(() => {
+    // Importa o socket global do useChat para escutar mensagens de qualquer sala
+    // Usamos um segundo canal: quando chega mensagem num pedido que não está aberto
+    const handler = (msg) => {
+      if (msg.autor === 'pizzaria') return; // ignora as próprias mensagens
+      if (chatPedidoId === msg.pedidoId) return; // chat aberto, não precisa piscar
+      setNaoLidas(prev => ({ ...prev, [msg.pedidoId]: true }));
+    };
+
+    // Acessa o socket do useChat — ele é singleton global
+    if (window.__socketPizzaria) {
+      window.__socketPizzaria.on('mensagem', handler);
+      return () => window.__socketPizzaria.off('mensagem', handler);
+    }
+  }, [chatPedidoId]);
 
   useEffect(() => {
     const token = localStorage.getItem('token');
@@ -190,10 +221,8 @@ export default function Dashboard() {
     const idxAtual = STATUS_ORDEM.indexOf(pedido.statusPedido);
     const idxNovo  = STATUS_ORDEM.indexOf(novoStatus);
     if (idxNovo < idxAtual) {
-      // Retrocesso — abre modal
       setModalRetrocesso({ pedido, novoStatus });
     } else {
-      // Avanço normal
       atualizarStatus(pedido._id, novoStatus);
     }
   }
@@ -206,7 +235,6 @@ export default function Dashboard() {
   function abrirMapa(endereco) {
     const { rua, numero, bairro, cidade, cep } = endereco;
     const query = encodeURIComponent(`${rua}, ${numero} - ${bairro}, ${cidade || ''} ${cep || ''}`);
-    // Tenta abrir o app nativo (Waze/Maps); cai no Google Maps web se não tiver
     window.open(`https://www.google.com/maps/search/?api=1&query=${query}`, '_blank');
   }
 
@@ -226,7 +254,13 @@ export default function Dashboard() {
   }
 
   function toggleChat(pedidoId) {
-    setChatPedidoId(prev => prev === pedidoId ? null : pedidoId);
+    if (chatPedidoId === pedidoId) {
+      setChatPedidoId(null);
+    } else {
+      setChatPedidoId(pedidoId);
+      // limpa notificação ao abrir
+      setNaoLidas(prev => ({ ...prev, [pedidoId]: false }));
+    }
   }
 
   function sair() {
@@ -238,7 +272,6 @@ export default function Dashboard() {
   return (
     <div className="dashboard-page">
 
-      {/* Header */}
       <div className="dashboard-header">
         <div className="dashboard-header-esquerda">
           <span className="dashboard-logo">🍕</span>
@@ -261,16 +294,10 @@ export default function Dashboard() {
                 <>
                   <div className="menu-admin-overlay" onClick={() => setMenuAberto(false)} />
                   <div className="menu-admin-dropdown">
-                    <button
-                      className="menu-admin-item"
-                      onClick={() => { setMenuAberto(false); navigate(`/perfil/${pizzariaId}`); }}
-                    >
+                    <button className="menu-admin-item" onClick={() => { setMenuAberto(false); navigate(`/perfil/${pizzariaId}`); }}>
                       ✏️ Editar perfil
                     </button>
-                    <button
-                      className="menu-admin-item"
-                      onClick={() => { setMenuAberto(false); navigate(`/cardapio-admin/${pizzariaId}`); }}
-                    >
+                    <button className="menu-admin-item" onClick={() => { setMenuAberto(false); navigate(`/cardapio-admin/${pizzariaId}`); }}>
                       🍕 Editar cardápio
                     </button>
                   </div>
@@ -284,32 +311,32 @@ export default function Dashboard() {
 
       <div className="dashboard-layout">
 
-        {/* Resumo — só admin */}
-        {perfil === 'admin' && <div className="dashboard-resumo">
-          <div className="resumo-card">
-            <span className="resumo-card-icone">📋</span>
-            <div>
-              <div className="resumo-card-label">Pedidos hoje</div>
-              <div className="resumo-card-valor">{totalHoje.length}</div>
+        {perfil === 'admin' && (
+          <div className="dashboard-resumo">
+            <div className="resumo-card">
+              <span className="resumo-card-icone">📋</span>
+              <div>
+                <div className="resumo-card-label">Pedidos hoje</div>
+                <div className="resumo-card-valor">{totalHoje.length}</div>
+              </div>
+            </div>
+            <div className="resumo-card">
+              <span className="resumo-card-icone">🔥</span>
+              <div>
+                <div className="resumo-card-label">Em andamento</div>
+                <div className={`resumo-card-valor ${emAndamento > 0 ? 'vermelho' : ''}`}>{emAndamento}</div>
+              </div>
+            </div>
+            <div className="resumo-card">
+              <span className="resumo-card-icone">💰</span>
+              <div>
+                <div className="resumo-card-label">Faturamento hoje</div>
+                <div className="resumo-card-valor verde">{formatarPreco(faturamentoHoje)}</div>
+              </div>
             </div>
           </div>
-          <div className="resumo-card">
-            <span className="resumo-card-icone">🔥</span>
-            <div>
-              <div className="resumo-card-label">Em andamento</div>
-              <div className={`resumo-card-valor ${emAndamento > 0 ? 'vermelho' : ''}`}>{emAndamento}</div>
-            </div>
-          </div>
-          <div className="resumo-card">
-            <span className="resumo-card-icone">💰</span>
-            <div>
-              <div className="resumo-card-label">Faturamento hoje</div>
-              <div className="resumo-card-valor verde">{formatarPreco(faturamentoHoje)}</div>
-            </div>
-          </div>
-        </div>}
+        )}
 
-        {/* Filtros */}
         <div className="dashboard-filtros">
           {(perfil === 'motoboy' ? FILTROS_MOTOBOY : FILTROS_ADMIN).map(f => {
             const count = f.valor === 'aguardando-retirada'
@@ -326,24 +353,20 @@ export default function Dashboard() {
                 onClick={() => setFiltro(f.valor)}
               >
                 {f.label}
-                {count !== null && (
-                  <span style={{ marginLeft: 6, opacity: 0.7 }}>({count})</span>
-                )}
+                {count !== null && <span style={{ marginLeft: 6, opacity: 0.7 }}>({count})</span>}
               </button>
             );
           })}
         </div>
 
         {loading && <div className="dashboard-loading"><div className="dashboard-spinner" /><p>Carregando pedidos...</p></div>}
-        {erro    && <div className="dashboard-vazio">⚠️ {erro}</div>}
+        {erro     && <div className="dashboard-vazio">⚠️ {erro}</div>}
         {!loading && !erro && pedidosFiltrados.length === 0 && <div className="dashboard-vazio">Nenhum pedido encontrado.</div>}
 
-        {/* Lista */}
         <div className="pedidos-lista">
           {!loading && !erro && pedidosFiltrados.map(pedido => (
             <div key={pedido._id} className="pedido-card">
 
-              {/* Header */}
               <div className="pedido-card-header">
                 <div className="pedido-card-header-esquerda">
                   <div>
@@ -364,13 +387,12 @@ export default function Dashboard() {
                 </div>
               </div>
 
-              {/* Body */}
               <div className="pedido-card-body">
                 <div className="pedido-itens">
                   {pedido.pizzas.map((pizza, i) => (
                     <div key={i} className="pedido-item-linha">
-                      <strong>{pizza.quantidade}× {pizza.produtoId?.nome || 'Pizza'}</strong>
-                      {' '}· {pizza.tamanho}
+                      <strong>{pizza.quantidade}× {pizza.nomeProduto || pizza.produtoId?.nome || 'Produto'}</strong>
+                      {pizza.tamanho && ` · ${pizza.tamanho}`}
                       <div className="pedido-item-detalhe">
                         {pizza.sabores?.join(', ')}
                         {pizza.adicionais?.length > 0 && ` + ${pizza.adicionais.map(a => a.nome).join(', ')}`}
@@ -385,33 +407,27 @@ export default function Dashboard() {
                     <strong>{pedido.contato?.nome}</strong>
                     {pedido.contato?.telefone}
                     {pedido.enderecoEntrega?.bairro && (
-                      <span style={{ display: 'block' }}>📍 {pedido.enderecoEntrega.bairro}</span>
+                      <span style={{ display: 'block' }}>{pedido.enderecoEntrega.bairro}</span>
                     )}
                     {perfil === 'motoboy' && pedido.enderecoEntrega?.rua && (
-                      <button
-                        className="btn-mapa"
-                        onClick={() => abrirMapa(pedido.enderecoEntrega)}
-                      >
+                      <button className="btn-mapa" onClick={() => abrirMapa(pedido.enderecoEntrega)}>
                         🗺️ Abrir no Maps
                       </button>
                     )}
                     {pedido.contato?.telefone && (
-                      <a
-                        className="btn-ligar"
-                        href={`tel:${pedido.contato.telefone.replace(/\D/g, '')}`}
-                      >
-                        📞 Ligar
+                      <a className="btn-ligar" href={`tel:${pedido.contato.telefone.replace(/\D/g, '')}`}>
+                        Ligar
                       </a>
                     )}
                   </div>
+
                   <div style={{ fontSize: '0.9rem', fontWeight: 800, color: '#e03c1f' }}>
                     {formatarPreco(calcularTotalPedido(pedido))}
                   </div>
                   <div style={{ fontSize: '0.75rem', color: '#aaa', marginBottom: 4 }}>
-                    💳 {pedido.pagamento}
+                    {pedido.pagamento}
                   </div>
 
-                  {/* Motoboy: fluxo retirada → entrega */}
                   {perfil === 'motoboy' ? (
                     pedido.statusPedido === 'Saiu para entrega' ? (
                       <>
@@ -422,13 +438,13 @@ export default function Dashboard() {
                         ) : (
                           <>
                             <span className="badge-pegou">✓ Pizza retirada</span>
-                            <button
-                              className="btn-proximo-status"
-                              onClick={() => atualizarStatus(pedido._id, 'Concluido')}
-                            >
+                            <button className="btn-proximo-status" onClick={() => atualizarStatus(pedido._id, 'Concluido')}>
                               Confirmar Entrega
                             </button>
-                            <button className="btn-chat" onClick={() => toggleChat(pedido._id)}>
+                            <button
+                              className={`btn-chat ${naoLidas[pedido._id] ? 'piscando' : ''}`}
+                              onClick={() => toggleChat(pedido._id)}
+                            >
                               {chatPedidoId === pedido._id ? '✕ Fechar chat' : '💬 Chat com cliente'}
                             </button>
                           </>
@@ -441,7 +457,6 @@ export default function Dashboard() {
                     )
                   ) : (
                     <>
-                      {/* Admin: seletor completo + avanço rápido + chat */}
                       <select
                         className="select-status"
                         value={pedido.statusPedido}
@@ -462,7 +477,7 @@ export default function Dashboard() {
                       )}
 
                       <button
-                        className="btn-chat"
+                        className={`btn-chat ${naoLidas[pedido._id] ? 'piscando' : ''}`}
                         onClick={() => toggleChat(pedido._id)}
                       >
                         {chatPedidoId === pedido._id ? '✕ Fechar chat' : '💬 Chat com cliente'}
@@ -472,15 +487,12 @@ export default function Dashboard() {
                 </div>
               </div>
 
-              {/* Histórico de retrocessos — só admin */}
               {perfil === 'admin' && pedido.historicoStatus?.length > 0 && (
                 <div className="pedido-historico">
                   <div className="pedido-historico-titulo">📋 Histórico de alterações</div>
                   {pedido.historicoStatus.map((h, i) => (
                     <div key={i} className="pedido-historico-item">
-                      <span className="historico-seta">
-                        {h.de} → {h.para}
-                      </span>
+                      <span className="historico-seta">{h.de} → {h.para}</span>
                       <span className="historico-motivo">"{h.motivo}"</span>
                       <span className="historico-hora">
                         {new Date(h.criadoEm).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
@@ -490,7 +502,6 @@ export default function Dashboard() {
                 </div>
               )}
 
-              {/* Chat inline — admin sempre, motoboy só quando Saiu para entrega */}
               {chatPedidoId === pedido._id && (perfil === 'admin' || pedido.statusPedido === 'Saiu para entrega') && (
                 <div style={{ borderTop: '1px solid #f0f0f0' }}>
                   <Chat
@@ -510,7 +521,6 @@ export default function Dashboard() {
         </div>
       </div>
 
-      {/* Modal de retrocesso */}
       {modalRetrocesso && (
         <ModalRetrocesso
           pedido={modalRetrocesso.pedido}
