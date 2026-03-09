@@ -9,31 +9,36 @@ const API = import.meta.env.VITE_API_URL || 'http://localhost:3001/api';
 function formatarPreco(valor) {
   return `R$ ${Number(valor).toFixed(2).replace('.', ',')}`;
 }
-
 function formatarHora(dataISO) {
   return new Date(dataISO).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
 }
-
 function formatarData(dataISO) {
   return new Date(dataISO).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric' });
 }
-
 function calcularTotalItem(pizza) {
   const preco = pizza.produtoId?.tamanhos?.find(t => t.tamanho === pizza.tamanho)?.preco || 0;
   const adicionais = pizza.adicionais?.reduce((s, a) => s + a.preco * a.quantidade, 0) || 0;
   return (preco + adicionais) * pizza.quantidade;
 }
-
 function calcularTotalPedido(pedido) {
   return pedido.pizzas.reduce((s, p) => s + calcularTotalItem(p), 0);
 }
 
+const STATUS_ORDEM = ['Aguardando confirmacao', 'Preparando', 'Saiu para entrega', 'Concluido'];
+
+const TODOS_STATUS = [
+  { valor: 'Aguardando confirmacao', label: 'Aguardando confirmacao' },
+  { valor: 'Preparando',             label: 'Preparando' },
+  { valor: 'Saiu para entrega',      label: 'Saiu para entrega' },
+  { valor: 'Concluido',              label: 'Concluido' },
+];
+
 const FILTROS = [
-  { label: 'Todos',                valor: 'todos' },
-  { label: 'Aguardando',           valor: 'Aguardando confirmacao' },
-  { label: 'Preparando',           valor: 'Preparando' },
-  { label: 'Saiu para entrega',    valor: 'Saiu para entrega' },
-  { label: 'Concluido',            valor: 'Concluido' },
+  { label: 'Todos',               valor: 'todos' },
+  { label: 'Aguardando',          valor: 'Aguardando confirmacao' },
+  { label: 'Preparando',          valor: 'Preparando' },
+  { label: 'Saiu para entrega',   valor: 'Saiu para entrega' },
+  { label: 'Concluido',           valor: 'Concluido' },
 ];
 
 const PROXIMO_STATUS = {
@@ -51,16 +56,60 @@ function statusClass(status) {
   return '';
 }
 
+// ── Modal de justificativa ──
+function ModalRetrocesso({ pedido, novoStatus, onConfirmar, onCancelar }) {
+  const [motivo, setMotivo] = useState('');
+
+  return (
+    <div className="modal-overlay" onClick={onCancelar}>
+      <div className="modal-retrocesso" onClick={e => e.stopPropagation()}>
+        <div className="modal-retrocesso-header">
+          <span>⚠️ Retornar status do pedido</span>
+          <button onClick={onCancelar}>✕</button>
+        </div>
+        <div className="modal-retrocesso-body">
+          <p>
+            Você está retornando o pedido
+            <strong> #{pedido._id.toString().slice(-5).toUpperCase()} </strong>
+            de <strong>{pedido.statusPedido}</strong> para <strong>{novoStatus}</strong>.
+          </p>
+          <label className="modal-retrocesso-label">Motivo *</label>
+          <textarea
+            className="modal-retrocesso-textarea"
+            placeholder="Ex: Cliente solicitou alteração, erro no preparo..."
+            value={motivo}
+            onChange={e => setMotivo(e.target.value)}
+            autoFocus
+          />
+        </div>
+        <div className="modal-retrocesso-footer">
+          <button className="btn-cancelar-retrocesso" onClick={onCancelar}>Cancelar</button>
+          <button
+            className="btn-confirmar-retrocesso"
+            onClick={() => onConfirmar(motivo)}
+            disabled={!motivo.trim()}
+          >
+            Confirmar retorno
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default function Dashboard() {
   const { pizzariaId } = useParams();
   const navigate       = useNavigate();
 
-  const [pedidos, setPedidos]               = useState([]);
-  const [loading, setLoading]               = useState(true);
-  const [erro, setErro]                     = useState(null);
-  const [filtro, setFiltro]                 = useState('todos');
-  const [usuario, setUsuario]               = useState(null);
-  const [chatPedidoId, setChatPedidoId]     = useState(null);
+  const [pedidos, setPedidos]             = useState([]);
+  const [loading, setLoading]             = useState(true);
+  const [erro, setErro]                   = useState(null);
+  const [filtro, setFiltro]               = useState('todos');
+  const [usuario, setUsuario]             = useState(null);
+  const [chatPedidoId, setChatPedidoId]   = useState(null);
+
+  // Modal de retrocesso
+  const [modalRetrocesso, setModalRetrocesso] = useState(null); // { pedido, novoStatus }
 
   const chat = useChat(chatPedidoId, 'pizzaria');
 
@@ -101,23 +150,40 @@ export default function Dashboard() {
     return pedidos.filter(p => new Date(p.createdAt).toDateString() === hoje);
   }, [pedidos]);
 
-  const emAndamento   = pedidos.filter(p => p.statusPedido !== 'Concluido').length;
+  const emAndamento     = pedidos.filter(p => p.statusPedido !== 'Concluido').length;
   const faturamentoHoje = totalHoje.reduce((s, p) => s + calcularTotalPedido(p), 0);
 
-  async function atualizarStatus(pedidoId, novoStatus) {
+  async function atualizarStatus(pedidoId, novoStatus, motivo = null) {
     const token = localStorage.getItem('token');
     try {
       const res  = await fetch(`${API}/pedidos/${pedidoId}/status`, {
         method:  'PATCH',
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-        body:    JSON.stringify({ statusPedido: novoStatus }),
+        body:    JSON.stringify({ statusPedido: novoStatus, motivo }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.erro);
-      setPedidos(prev => prev.map(p => p._id === pedidoId ? { ...p, statusPedido: novoStatus } : p));
+      setPedidos(prev => prev.map(p => p._id === pedidoId ? data : p));
     } catch (err) {
       alert('Erro ao atualizar status: ' + err.message);
     }
+  }
+
+  function handleMudarStatus(pedido, novoStatus) {
+    const idxAtual = STATUS_ORDEM.indexOf(pedido.statusPedido);
+    const idxNovo  = STATUS_ORDEM.indexOf(novoStatus);
+    if (idxNovo < idxAtual) {
+      // Retrocesso — abre modal
+      setModalRetrocesso({ pedido, novoStatus });
+    } else {
+      // Avanço normal
+      atualizarStatus(pedido._id, novoStatus);
+    }
+  }
+
+  function confirmarRetrocesso(motivo) {
+    atualizarStatus(modalRetrocesso.pedido._id, modalRetrocesso.novoStatus, motivo);
+    setModalRetrocesso(null);
   }
 
   function toggleChat(pedidoId) {
@@ -190,24 +256,16 @@ export default function Dashboard() {
           ))}
         </div>
 
-        {/* Estados */}
-        {loading && (
-          <div className="dashboard-loading">
-            <div className="dashboard-spinner" />
-            <p>Carregando pedidos...</p>
-          </div>
-        )}
-        {erro && <div className="dashboard-vazio">⚠️ {erro}</div>}
-        {!loading && !erro && pedidosFiltrados.length === 0 && (
-          <div className="dashboard-vazio">Nenhum pedido encontrado.</div>
-        )}
+        {loading && <div className="dashboard-loading"><div className="dashboard-spinner" /><p>Carregando pedidos...</p></div>}
+        {erro    && <div className="dashboard-vazio">⚠️ {erro}</div>}
+        {!loading && !erro && pedidosFiltrados.length === 0 && <div className="dashboard-vazio">Nenhum pedido encontrado.</div>}
 
-        {/* Lista de pedidos */}
+        {/* Lista */}
         <div className="pedidos-lista">
           {!loading && !erro && pedidosFiltrados.map(pedido => (
             <div key={pedido._id} className="pedido-card">
 
-              {/* Header do card */}
+              {/* Header */}
               <div className="pedido-card-header">
                 <div className="pedido-card-header-esquerda">
                   <div>
@@ -223,7 +281,7 @@ export default function Dashboard() {
                 </span>
               </div>
 
-              {/* Body do card */}
+              {/* Body */}
               <div className="pedido-card-body">
                 <div className="pedido-itens">
                   {pedido.pizzas.map((pizza, i) => (
@@ -250,29 +308,57 @@ export default function Dashboard() {
                   <div style={{ fontSize: '0.9rem', fontWeight: 800, color: '#e03c1f' }}>
                     {formatarPreco(calcularTotalPedido(pedido))}
                   </div>
-                  <div style={{ fontSize: '0.75rem', color: '#aaa' }}>
+                  <div style={{ fontSize: '0.75rem', color: '#aaa', marginBottom: 4 }}>
                     💳 {pedido.pagamento}
                   </div>
 
-                  {/* Botões de ação */}
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: 6, marginTop: 4 }}>
-                    {PROXIMO_STATUS[pedido.statusPedido] && (
-                      <button
-                        className="btn-proximo-status"
-                        onClick={() => atualizarStatus(pedido._id, PROXIMO_STATUS[pedido.statusPedido].valor)}
-                      >
-                        {PROXIMO_STATUS[pedido.statusPedido].label}
-                      </button>
-                    )}
+                  {/* Seletor de status — todos os status disponíveis */}
+                  <select
+                    className="select-status"
+                    value={pedido.statusPedido}
+                    onChange={e => handleMudarStatus(pedido, e.target.value)}
+                  >
+                    {TODOS_STATUS.map(s => (
+                      <option key={s.valor} value={s.valor}>{s.label}</option>
+                    ))}
+                  </select>
+
+                  {/* Avanço rápido */}
+                  {PROXIMO_STATUS[pedido.statusPedido] && (
                     <button
-                      className="btn-chat"
-                      onClick={() => toggleChat(pedido._id)}
+                      className="btn-proximo-status"
+                      onClick={() => handleMudarStatus(pedido, PROXIMO_STATUS[pedido.statusPedido].valor)}
                     >
-                      {chatPedidoId === pedido._id ? '✕ Fechar chat' : '💬 Chat com cliente'}
+                      {PROXIMO_STATUS[pedido.statusPedido].label}
                     </button>
-                  </div>
+                  )}
+
+                  <button
+                    className="btn-chat"
+                    onClick={() => toggleChat(pedido._id)}
+                  >
+                    {chatPedidoId === pedido._id ? '✕ Fechar chat' : '💬 Chat com cliente'}
+                  </button>
                 </div>
               </div>
+
+              {/* Histórico de retrocessos */}
+              {pedido.historicoStatus?.length > 0 && (
+                <div className="pedido-historico">
+                  <div className="pedido-historico-titulo">📋 Histórico de alterações</div>
+                  {pedido.historicoStatus.map((h, i) => (
+                    <div key={i} className="pedido-historico-item">
+                      <span className="historico-seta">
+                        {h.de} → {h.para}
+                      </span>
+                      <span className="historico-motivo">"{h.motivo}"</span>
+                      <span className="historico-hora">
+                        {new Date(h.criadoEm).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              )}
 
               {/* Chat inline */}
               {chatPedidoId === pedido._id && (
@@ -292,8 +378,18 @@ export default function Dashboard() {
             </div>
           ))}
         </div>
-
       </div>
+
+      {/* Modal de retrocesso */}
+      {modalRetrocesso && (
+        <ModalRetrocesso
+          pedido={modalRetrocesso.pedido}
+          novoStatus={modalRetrocesso.novoStatus}
+          onConfirmar={confirmarRetrocesso}
+          onCancelar={() => setModalRetrocesso(null)}
+        />
+      )}
+
     </div>
   );
 }

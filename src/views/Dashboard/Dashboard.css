@@ -319,3 +319,191 @@
 }
 
 .btn-chat:hover { background: #e8e8e8; color: #1a1a1a; }
+
+/* ── Select de status ── */
+.select-status {
+  border: 1.5px solid #e0e0e0;
+  border-radius: 8px;
+  padding: 7px 10px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: #333;
+  background: #fff;
+  cursor: pointer;
+  outline: none;
+  width: 100%;
+  transition: border-color 0.15s;
+  font-family: inherit;
+}
+
+.select-status:focus { border-color: #e03c1f; }
+
+/* ── Histórico de retrocessos ── */
+.pedido-historico {
+  border-top: 1px solid #f0f0f0;
+  padding: 12px 18px;
+  background: #fffbf0;
+}
+
+.pedido-historico-titulo {
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: #aaa;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+  margin-bottom: 8px;
+}
+
+.pedido-historico-item {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  flex-wrap: wrap;
+  padding: 5px 0;
+  border-bottom: 1px dashed #f0e8d0;
+  font-size: 0.8rem;
+}
+
+.pedido-historico-item:last-child { border-bottom: none; }
+
+.historico-seta {
+  font-weight: 700;
+  color: #c2410c;
+  white-space: nowrap;
+}
+
+.historico-motivo {
+  color: #555;
+  font-style: italic;
+  flex: 1;
+}
+
+.historico-hora {
+  color: #bbb;
+  font-size: 0.72rem;
+  white-space: nowrap;
+}
+
+/* ── Modal retrocesso ── */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.5);
+  z-index: 2000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  animation: fadeIn 0.2s ease;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+.modal-retrocesso {
+  background: #fff;
+  border-radius: 16px;
+  width: 100%;
+  max-width: 440px;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.2);
+  animation: slideUp 0.25s ease;
+}
+
+@keyframes slideUp {
+  from { opacity: 0; transform: translateY(20px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.modal-retrocesso-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 20px 20px 14px;
+  font-size: 1rem;
+  font-weight: 800;
+  color: #c2410c;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.modal-retrocesso-header button {
+  background: none;
+  border: none;
+  font-size: 1rem;
+  cursor: pointer;
+  color: #aaa;
+}
+
+.modal-retrocesso-body {
+  padding: 16px 20px;
+}
+
+.modal-retrocesso-body p {
+  font-size: 0.88rem;
+  color: #555;
+  margin-bottom: 14px;
+  line-height: 1.5;
+}
+
+.modal-retrocesso-label {
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: #555;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+  display: block;
+  margin-bottom: 6px;
+}
+
+.modal-retrocesso-textarea {
+  width: 100%;
+  border: 1.5px solid #e0e0e0;
+  border-radius: 10px;
+  padding: 10px 12px;
+  font-size: 0.88rem;
+  font-family: inherit;
+  resize: none;
+  outline: none;
+  height: 90px;
+  transition: border-color 0.15s;
+  box-sizing: border-box;
+}
+
+.modal-retrocesso-textarea:focus { border-color: #e03c1f; }
+
+.modal-retrocesso-footer {
+  display: flex;
+  gap: 10px;
+  padding: 14px 20px 20px;
+  justify-content: flex-end;
+}
+
+.btn-cancelar-retrocesso {
+  background: #f5f5f5;
+  border: none;
+  border-radius: 8px;
+  padding: 10px 18px;
+  font-size: 0.88rem;
+  font-weight: 600;
+  color: #555;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.btn-cancelar-retrocesso:hover { background: #e8e8e8; }
+
+.btn-confirmar-retrocesso {
+  background: #c2410c;
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  padding: 10px 18px;
+  font-size: 0.88rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.btn-confirmar-retrocesso:hover    { background: #9a3412; }
+.btn-confirmar-retrocesso:disabled { opacity: 0.4; cursor: not-allowed; }

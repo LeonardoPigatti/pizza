@@ -8,7 +8,7 @@ const AdicionalSelecionadoSchema = new mongoose.Schema({
 
 const PizzaPedidoSchema = new mongoose.Schema({
   produtoId:  { type: mongoose.Schema.Types.ObjectId, ref: 'Produto', required: true },
-  tamanho:    { type: String, enum: ['Pequena', 'Média', 'Grande'], required: true },
+  tamanho:    { type: String, enum: ['Pequena', 'Media', 'Grande'], required: true },
   sabores:    { type: [String], required: true },
   adicionais: { type: [AdicionalSelecionadoSchema], default: [] },
   quantidade: { type: Number, default: 1 },
@@ -39,19 +39,28 @@ const CupomSchema = new mongoose.Schema({
   valido:      { type: Boolean, default: true },
 }, { _id: false });
 
+// Histórico de retorno de status
+const HistoricoStatusSchema = new mongoose.Schema({
+  de:        { type: String, required: true },
+  para:      { type: String, required: true },
+  motivo:    { type: String, required: true },
+  criadoEm:  { type: Date, default: Date.now },
+}, { _id: false });
+
 const PedidoSchema = new mongoose.Schema({
   pizzas:              { type: [PizzaPedidoSchema], required: true },
   tipoEntrega:         { type: String, enum: ['Entrega', 'Retirada'], required: true },
   enderecoEntrega:     { type: EnderecoEntregaSchema, default: null },
   contato:             { type: ContatoSchema, required: true },
   cupom:               { type: CupomSchema, default: null },
-  pagamento:           { type: String, enum: ['Cartão online', 'Dinheiro na entrega'], required: true },
+  pagamento:           { type: String, enum: ['Cartao online', 'Dinheiro na entrega'], required: true },
   statusPedido:        {
-    type: String,
-    enum: ['Aguardando confirmacao', 'Preparando', 'Saiu para entrega', 'Concluido'],
-    default: 'Aguardando confirmação',
+    type:    String,
+    enum:    ['Aguardando confirmacao', 'Preparando', 'Saiu para entrega', 'Concluido'],
+    default: 'Aguardando confirmacao',
   },
   tempoEsperaEstimado: { type: Number, default: 40 },
+  historicoStatus:     { type: [HistoricoStatusSchema], default: [] },
 }, { timestamps: true });
 
 module.exports = mongoose.model('Pedido', PedidoSchema);

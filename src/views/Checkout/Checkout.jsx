@@ -80,7 +80,7 @@ export default function Checkout({ itens, subtotal, onPedidoConfirmado }) {
 
   // Mapeia os valores do frontend para os enums do Model
   const PAGAMENTO_MAP = {
-    online:   'Cartão online',
+    online:   'Cartao online',
     dinheiro: 'Dinheiro na entrega',
     maquina:  'Dinheiro na entrega',
   };
@@ -286,7 +286,7 @@ export default function Checkout({ itens, subtotal, onPedidoConfirmado }) {
               </div>
               <div className="pagamento-opcoes">
                 {[
-                  { id: 'online',   icone: '💳', titulo: 'Pagar agora (online)',    desc: 'Cartão de crédito, débito ou Pix' },
+                  { id: 'online',   icone: '💳', titulo: 'Pagar agora (online)',    desc: 'Cartao de crédito, débito ou Pix' },
                   { id: 'dinheiro', icone: '💵', titulo: 'Dinheiro na entrega',     desc: 'Informe se precisa de troco' },
                   { id: 'maquina',  icone: '📱', titulo: 'Máquina na entrega',      desc: 'Crédito ou débito na entrega' },
                 ].map((op) => (
