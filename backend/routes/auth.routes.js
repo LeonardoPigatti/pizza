@@ -4,7 +4,7 @@ const Usuario = require('../models/Usuario.model');
 
 function gerarToken(usuario) {
   return jwt.sign(
-    { id: usuario._id, email: usuario.email, pizzariaId: usuario.pizzaria },
+    { id: usuario._id, email: usuario.email, pizzariaId: usuario.pizzaria, perfil: usuario.perfil },
     process.env.JWT_SECRET,
     { expiresIn: '7d' }
   );
@@ -25,7 +25,7 @@ router.post('/registro', async (req, res) => {
     const usuario = await Usuario.create({ nome, email, senha, pizzaria: pizzariaId });
     const token   = gerarToken(usuario);
 
-    res.status(201).json({ token, usuario: { id: usuario._id, nome: usuario.nome, email: usuario.email, pizzariaId: usuario.pizzaria } });
+    res.status(201).json({ token, usuario: { id: usuario._id, nome: usuario.nome, email: usuario.email, pizzariaId: usuario.pizzaria, perfil: usuario.perfil } });
   } catch (err) {
     res.status(400).json({ erro: err.message });
   }
@@ -44,7 +44,7 @@ router.post('/login', async (req, res) => {
     if (!senhaCorreta) return res.status(401).json({ erro: 'Email ou senha incorretos' });
 
     const token = gerarToken(usuario);
-    res.json({ token, usuario: { id: usuario._id, nome: usuario.nome, email: usuario.email, pizzariaId: usuario.pizzaria } });
+    res.json({ token, usuario: { id: usuario._id, nome: usuario.nome, email: usuario.email, pizzariaId: usuario.pizzaria, perfil: usuario.perfil } });
   } catch (err) {
     res.status(500).json({ erro: err.message });
   }

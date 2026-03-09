@@ -111,13 +111,15 @@ export default function Dashboard() {
   // Modal de retrocesso
   const [modalRetrocesso, setModalRetrocesso] = useState(null); // { pedido, novoStatus }
 
-  const chat = useChat(chatPedidoId, 'pizzaria');
+  const perfil = usuario?.perfil || 'admin';
+  const chat   = useChat(chatPedidoId, 'pizzaria');
 
   useEffect(() => {
     const token = localStorage.getItem('token');
     const user  = localStorage.getItem('usuario');
     if (!token || !user) { navigate('/login'); return; }
-    setUsuario(JSON.parse(user));
+    const u = JSON.parse(user);
+    setUsuario(u);
   }, []);
 
   useEffect(() => {
@@ -312,38 +314,63 @@ export default function Dashboard() {
                     💳 {pedido.pagamento}
                   </div>
 
-                  {/* Seletor de status — todos os status disponíveis */}
-                  <select
-                    className="select-status"
-                    value={pedido.statusPedido}
-                    onChange={e => handleMudarStatus(pedido, e.target.value)}
-                  >
-                    {TODOS_STATUS.map(s => (
-                      <option key={s.valor} value={s.valor}>{s.label}</option>
-                    ))}
-                  </select>
+                  {/* Motoboy: só pode concluir pedidos em entrega + chat quando em entrega */}
+                  {perfil === 'motoboy' ? (
+                    pedido.statusPedido === 'Saiu para entrega' ? (
+                      <>
+                        <button
+                          className="btn-proximo-status"
+                          onClick={() => atualizarStatus(pedido._id, 'Concluido')}
+                        >
+                          Confirmar Entrega
+                        </button>
+                        <button
+                          className="btn-chat"
+                          onClick={() => toggleChat(pedido._id)}
+                        >
+                          {chatPedidoId === pedido._id ? '✕ Fechar chat' : '💬 Chat com cliente'}
+                        </button>
+                      </>
+                    ) : (
+                      <span style={{ fontSize: '0.75rem', color: '#bbb', fontStyle: 'italic' }}>
+                        {pedido.statusPedido === 'Concluido' ? 'Entrega concluida' : 'Aguardando saida para entrega'}
+                      </span>
+                    )
+                  ) : (
+                    <>
+                      {/* Admin: seletor completo + avanço rápido + chat */}
+                      <select
+                        className="select-status"
+                        value={pedido.statusPedido}
+                        onChange={e => handleMudarStatus(pedido, e.target.value)}
+                      >
+                        {TODOS_STATUS.map(s => (
+                          <option key={s.valor} value={s.valor}>{s.label}</option>
+                        ))}
+                      </select>
 
-                  {/* Avanço rápido */}
-                  {PROXIMO_STATUS[pedido.statusPedido] && (
-                    <button
-                      className="btn-proximo-status"
-                      onClick={() => handleMudarStatus(pedido, PROXIMO_STATUS[pedido.statusPedido].valor)}
-                    >
-                      {PROXIMO_STATUS[pedido.statusPedido].label}
-                    </button>
+                      {PROXIMO_STATUS[pedido.statusPedido] && (
+                        <button
+                          className="btn-proximo-status"
+                          onClick={() => handleMudarStatus(pedido, PROXIMO_STATUS[pedido.statusPedido].valor)}
+                        >
+                          {PROXIMO_STATUS[pedido.statusPedido].label}
+                        </button>
+                      )}
+
+                      <button
+                        className="btn-chat"
+                        onClick={() => toggleChat(pedido._id)}
+                      >
+                        {chatPedidoId === pedido._id ? '✕ Fechar chat' : '💬 Chat com cliente'}
+                      </button>
+                    </>
                   )}
-
-                  <button
-                    className="btn-chat"
-                    onClick={() => toggleChat(pedido._id)}
-                  >
-                    {chatPedidoId === pedido._id ? '✕ Fechar chat' : '💬 Chat com cliente'}
-                  </button>
                 </div>
               </div>
 
-              {/* Histórico de retrocessos */}
-              {pedido.historicoStatus?.length > 0 && (
+              {/* Histórico de retrocessos — só admin */}
+              {perfil === 'admin' && pedido.historicoStatus?.length > 0 && (
                 <div className="pedido-historico">
                   <div className="pedido-historico-titulo">📋 Histórico de alterações</div>
                   {pedido.historicoStatus.map((h, i) => (
@@ -360,8 +387,8 @@ export default function Dashboard() {
                 </div>
               )}
 
-              {/* Chat inline */}
-              {chatPedidoId === pedido._id && (
+              {/* Chat inline — admin sempre, motoboy só quando Saiu para entrega */}
+              {chatPedidoId === pedido._id && (perfil === 'admin' || pedido.statusPedido === 'Saiu para entrega') && (
                 <div style={{ borderTop: '1px solid #f0f0f0' }}>
                   <Chat
                     mensagens={chat.mensagens}
