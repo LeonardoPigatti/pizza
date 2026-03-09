@@ -1,7 +1,10 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useParams } from 'react-router-dom';
 import './Cardapio.css';
-import ModalPizza from './Modal/Modalpizza.jsx';
+import ModalPizza from '../Modal/Modalpizza.jsx';
+import Carrinho, { CarrinhoFAB } from '../Carrinho/Carrinho.jsx';
+import { useCarrinho } from '../Carrinho/useCarrinho.js';
+
 const API = import.meta.env.VITE_API_URL || 'http://localhost:3001/api';
 
 async function getPizzaria(id) {
@@ -69,6 +72,16 @@ export default function Cardapio() {
   const [loading, setLoading] = useState(true);
   const [erro, setErro] = useState(null);
   const [modalProduto, setModalProduto] = useState(null);
+  const [carrinhoAberto, setCarrinhoAberto] = useState(false);
+
+  const {
+    itens,
+    totalItens,
+    subtotal,
+    adicionarItem,
+    alterarQuantidade,
+    removerItem,
+  } = useCarrinho();
 
   useEffect(() => {
     getPizzaria(pizzariaId)
@@ -106,8 +119,8 @@ export default function Cardapio() {
   }
 
   function handleAdicionarAoPedido(item) {
-    console.log('Adicionado ao pedido:', item);
-    // conectar com carrinho depois
+    adicionarItem(item);
+    setCarrinhoAberto(true);
   }
 
   const abas = ['Todas', ...categorias];
@@ -139,7 +152,6 @@ export default function Cardapio() {
             <div className="banner-infos">
               <span className="banner-info">⭐ 4.8</span>
               <span className="banner-info">🕐 30-40 min</span>
-
               <span className="banner-info">
                 📍 {pizzaria?.endereco?.rua},{' '}
                 {pizzaria?.endereco?.numero} -{' '}
@@ -155,7 +167,6 @@ export default function Cardapio() {
         <div className="busca-inner">
           <div className="busca-input-wrapper">
             <span className="busca-icon">🔍</span>
-
             <input
               className="busca-input"
               type="text"
@@ -224,6 +235,27 @@ export default function Cardapio() {
           produto={modalProduto}
           onFechar={() => setModalProduto(null)}
           onAdicionarAoPedido={handleAdicionarAoPedido}
+        />
+      )}
+
+      {/* Botão flutuante do carrinho */}
+      <CarrinhoFAB
+        totalItens={totalItens}
+        onClick={() => setCarrinhoAberto(true)}
+      />
+
+      {/* Drawer do carrinho */}
+      {carrinhoAberto && (
+        <Carrinho
+          itens={itens}
+          subtotal={subtotal}
+          onFechar={() => setCarrinhoAberto(false)}
+          onAlterarQtd={alterarQuantidade}
+          onRemover={removerItem}
+          onFinalizarPedido={() => {
+            // conectar com checkout depois
+            console.log('Pedido finalizado:', itens);
+          }}
         />
       )}
 
