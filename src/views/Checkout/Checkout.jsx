@@ -140,41 +140,13 @@ export default function Checkout({ itens, subtotal, onPedidoConfirmado }) {
       const data = await res.json();
       if (!res.ok) throw new Error(data.erro || 'Erro ao salvar pedido');
 
-      setNumeroPedido(data._id.toString().slice(-5).toUpperCase());
-      setPedidoConfirmado(true);
       if (onPedidoConfirmado) onPedidoConfirmado(data);
+      navigate(`/status/${data._id}`);
     } catch (err) {
       setErroSalvar(err.message);
     } finally {
       setSalvando(false);
     }
-  }
-
-  // ── Tela de sucesso ──
-  if (pedidoConfirmado) {
-    return (
-      <div className="checkout-sucesso">
-        <div className="sucesso-icone">🎉</div>
-        <div className="sucesso-titulo">Pedido confirmado!</div>
-        <div className="sucesso-subtitulo">
-          Seu pedido foi recebido e já está sendo preparado com todo carinho.
-        </div>
-        <div className="sucesso-numero">
-          Número do pedido
-          <strong>#{numeroPedido}</strong>
-        </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 24, background: '#fff8f7', borderRadius: 12, padding: '14px 20px', border: '1.5px solid #ffe0d9' }}>
-          <span style={{ fontSize: '1.5rem' }}>🕐</span>
-          <div>
-            <div style={{ fontSize: '0.75rem', color: '#aaa', fontWeight: 700, textTransform: 'uppercase' }}>Tempo estimado</div>
-            <div style={{ fontSize: '1.1rem', fontWeight: 900, color: '#e03c1f' }}>{tempoEstimado}</div>
-          </div>
-        </div>
-        <button className="btn-voltar-cardapio" onClick={() => navigate(-2)}>
-          Voltar ao cardápio
-        </button>
-      </div>
-    );
   }
 
   return (

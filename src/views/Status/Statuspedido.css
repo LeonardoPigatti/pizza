@@ -1,0 +1,360 @@
+/* ── Página Status ── */
+.status-page {
+  min-height: 100vh;
+  background: #f7f7f7;
+  padding-bottom: 60px;
+}
+
+/* ── Header ── */
+.status-header {
+  background: #fff;
+  border-bottom: 1px solid #f0f0f0;
+  padding: 16px 20px;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+
+.status-header-titulo {
+  font-size: 1.1rem;
+  font-weight: 800;
+  color: #1a1a1a;
+}
+
+.status-btn-voltar {
+  background: #f5f5f5;
+  border: none;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  font-size: 1.1rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #555;
+  transition: background 0.15s, color 0.15s;
+  flex-shrink: 0;
+}
+
+.status-btn-voltar:hover {
+  background: #ffe9e4;
+  color: #e03c1f;
+}
+
+/* ── Layout ── */
+.status-layout {
+  max-width: 520px;
+  margin: 24px auto 0;
+  padding: 0 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+/* ── Card genérico ── */
+.status-card {
+  background: #fff;
+  border-radius: 16px;
+  padding: 20px;
+  border: 1.5px solid #f0f0f0;
+  animation: entradaCard 0.25s ease;
+}
+
+@keyframes entradaCard {
+  from { opacity: 0; transform: translateY(10px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* ── Número do pedido ── */
+.status-numero-wrapper {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.status-numero-label {
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: #aaa;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+  margin-bottom: 4px;
+}
+
+.status-numero-valor {
+  font-size: 1.3rem;
+  font-weight: 900;
+  color: #1a1a1a;
+  letter-spacing: 2px;
+}
+
+.status-numero-icone {
+  font-size: 2rem;
+}
+
+/* ── Cronômetro ── */
+.status-timer-card {
+  background: linear-gradient(135deg, #e03c1f 0%, #c4331a 100%);
+  border: none;
+  color: #fff;
+  text-align: center;
+  padding: 28px 20px;
+}
+
+.status-timer-label {
+  font-size: 0.78rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  opacity: 0.8;
+  margin-bottom: 8px;
+}
+
+.status-timer-valor {
+  font-size: 3.5rem;
+  font-weight: 900;
+  line-height: 1;
+  letter-spacing: -2px;
+  margin-bottom: 6px;
+}
+
+.status-timer-desc {
+  font-size: 0.82rem;
+  opacity: 0.75;
+}
+
+/* ── Progresso de status ── */
+.status-steps {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+.status-step {
+  display: flex;
+  align-items: flex-start;
+  gap: 16px;
+  padding: 14px 0;
+  position: relative;
+}
+
+.status-step:not(:last-child)::after {
+  content: '';
+  position: absolute;
+  left: 15px;
+  top: 42px;
+  bottom: 0;
+  width: 2px;
+  background: #f0f0f0;
+}
+
+.status-step.concluido:not(:last-child)::after {
+  background: #e03c1f;
+}
+
+.status-step-bolinha {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  border: 2px solid #e0e0e0;
+  background: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.85rem;
+  flex-shrink: 0;
+  transition: all 0.3s;
+  z-index: 1;
+}
+
+.status-step.concluido .status-step-bolinha {
+  background: #e03c1f;
+  border-color: #e03c1f;
+  color: #fff;
+}
+
+.status-step.ativo .status-step-bolinha {
+  border-color: #e03c1f;
+  background: #fff3f0;
+  box-shadow: 0 0 0 4px rgba(224, 60, 31, 0.12);
+  animation: pulsar 1.8s ease-in-out infinite;
+}
+
+@keyframes pulsar {
+  0%, 100% { box-shadow: 0 0 0 4px rgba(224, 60, 31, 0.12); }
+  50%       { box-shadow: 0 0 0 8px rgba(224, 60, 31, 0.06); }
+}
+
+.status-step-info { flex: 1; padding-top: 5px; }
+
+.status-step-titulo {
+  font-size: 0.92rem;
+  font-weight: 700;
+  color: #1a1a1a;
+  margin-bottom: 2px;
+}
+
+.status-step.pendente .status-step-titulo { color: #bbb; }
+
+.status-step-desc {
+  font-size: 0.78rem;
+  color: #aaa;
+  line-height: 1.4;
+}
+
+.status-step.ativo .status-step-desc { color: #e03c1f; font-weight: 600; }
+
+/* ── Resumo do pedido ── */
+.status-resumo-titulo {
+  font-size: 0.95rem;
+  font-weight: 800;
+  color: #1a1a1a;
+  margin-bottom: 14px;
+}
+
+.status-resumo-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 8px 0;
+  border-bottom: 1px solid #f5f5f5;
+}
+
+.status-resumo-item:last-of-type { border-bottom: none; }
+
+.status-resumo-item-nome {
+  font-size: 0.88rem;
+  font-weight: 600;
+  color: #1a1a1a;
+}
+
+.status-resumo-item-detalhe {
+  font-size: 0.75rem;
+  color: #aaa;
+  margin-top: 1px;
+}
+
+.status-resumo-item-preco {
+  font-size: 0.88rem;
+  font-weight: 700;
+  color: #555;
+  white-space: nowrap;
+}
+
+/* ── Detalhes da entrega ── */
+.status-detalhe-linha {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 8px 0;
+  font-size: 0.87rem;
+  color: #555;
+  border-bottom: 1px solid #f5f5f5;
+}
+
+.status-detalhe-linha:last-child { border-bottom: none; }
+
+.status-detalhe-icone { font-size: 1rem; flex-shrink: 0; margin-top: 1px; }
+.status-detalhe-texto { line-height: 1.4; }
+.status-detalhe-texto strong { color: #1a1a1a; display: block; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.3px; margin-bottom: 1px; }
+
+/* ── Loading / Erro ── */
+.status-loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 60vh;
+  gap: 16px;
+  color: #aaa;
+  font-size: 0.9rem;
+}
+
+.status-spinner {
+  width: 36px;
+  height: 36px;
+  border: 3px solid #f0f0f0;
+  border-top-color: #e03c1f;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+.status-erro {
+  text-align: center;
+  padding: 60px 20px;
+  color: #aaa;
+}
+
+.status-erro p { margin-bottom: 16px; font-size: 0.9rem; }
+
+.btn-tentar-novamente {
+  background: #e03c1f;
+  color: #fff;
+  border: none;
+  border-radius: 10px;
+  padding: 10px 22px;
+  font-size: 0.88rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.btn-tentar-novamente:hover { background: #c4331a; }
+
+/* ── Botão voltar ao cardápio ── */
+.status-btn-cardapio {
+  width: 100%;
+  background: #fff;
+  color: #e03c1f;
+  border: 2px solid #e03c1f;
+  border-radius: 12px;
+  padding: 14px;
+  font-size: 0.92rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.18s;
+  margin-top: 4px;
+}
+
+.status-btn-cardapio:hover {
+  background: #e03c1f;
+  color: #fff;
+}
+
+/* ── Responsivo ── */
+@media (max-width: 480px) {
+  .status-timer-valor { font-size: 2.8rem; }
+}
+
+/* ── Botão WhatsApp ── */
+.status-btn-whatsapp {
+  width: 100%;
+  background: #25d366;
+  color: #fff;
+  border: none;
+  border-radius: 12px;
+  padding: 14px;
+  font-size: 0.92rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 0.18s, transform 0.15s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  margin-top: 4px;
+}
+
+.status-btn-whatsapp:hover {
+  background: #1ebe5d;
+  transform: translateY(-1px);
+}
