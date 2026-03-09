@@ -284,6 +284,7 @@ export default function Dashboard() {
                     enviar={chat.enviar}
                     handleKeyDown={chat.handleKeyDown}
                     autorLocal="pizzaria"
+                    carregando={chat.carregando}
                   />
                 </div>
               )}

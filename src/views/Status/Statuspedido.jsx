@@ -294,6 +294,7 @@ export default function StatusPedido() {
             enviar={chat.enviar}
             handleKeyDown={chat.handleKeyDown}
             autorLocal="cliente"
+            carregando={chat.carregando}
           />
         </div>
 

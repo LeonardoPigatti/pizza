@@ -2,8 +2,8 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import { io } from 'socket.io-client';
 
 const SOCKET_URL = import.meta.env.VITE_API_URL?.replace('/api', '') || 'http://localhost:3001';
+const API        = import.meta.env.VITE_API_URL || 'http://localhost:3001/api';
 
-// Socket único compartilhado pela aplicação
 let socketGlobal = null;
 
 function getSocket() {
@@ -16,6 +16,7 @@ function getSocket() {
 export function useChat(pedidoId, autor) {
   const [mensagens, setMensagens] = useState([]);
   const [texto, setTexto]         = useState('');
+  const [carregando, setCarregando] = useState(false);
   const salaAtual                 = useRef(null);
 
   useEffect(() => {
@@ -23,21 +24,39 @@ export function useChat(pedidoId, autor) {
 
     const socket = getSocket();
 
-    // Sai da sala anterior se existir
+    // Sai da sala anterior
     if (salaAtual.current && salaAtual.current !== pedidoId) {
       socket.emit('sair_sala', salaAtual.current);
     }
 
-    // Limpa mensagens ao trocar de pedido
-    setMensagens([]);
     salaAtual.current = pedidoId;
+    setMensagens([]);
+    setCarregando(true);
 
-    // Entra na nova sala
+    // Carrega histórico do banco
+    fetch(`${API}/mensagens/${pedidoId}`)
+      .then(r => r.json())
+      .then(data => {
+        const historico = data.map(m => ({
+          _id:   m._id,
+          texto: m.texto,
+          autor: m.autor,
+          hora:  m.createdAt,
+        }));
+        setMensagens(historico);
+      })
+      .catch(console.error)
+      .finally(() => setCarregando(false));
+
+    // Entra na sala para receber novas mensagens
     socket.emit('entrar_sala', pedidoId);
 
-    // Listener de mensagens
     function onMensagem(msg) {
-      setMensagens((prev) => [...prev, msg]);
+      // Evita duplicar mensagens que já vieram do histórico
+      setMensagens(prev => {
+        if (prev.some(m => m._id === msg._id)) return prev;
+        return [...prev, msg];
+      });
     }
 
     socket.on('mensagem', onMensagem);
@@ -49,8 +68,7 @@ export function useChat(pedidoId, autor) {
 
   const enviar = useCallback(() => {
     if (!texto.trim() || !pedidoId) return;
-    const socket = getSocket();
-    socket.emit('mensagem', { pedidoId, texto: texto.trim(), autor });
+    getSocket().emit('mensagem', { pedidoId, texto: texto.trim(), autor });
     setTexto('');
   }, [texto, pedidoId, autor]);
 
@@ -61,5 +79,5 @@ export function useChat(pedidoId, autor) {
     }
   }
 
-  return { mensagens, texto, setTexto, enviar, handleKeyDown };
+  return { mensagens, texto, setTexto, enviar, handleKeyDown, carregando };
 }

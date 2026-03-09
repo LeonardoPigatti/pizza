@@ -15,7 +15,7 @@ function formatarHora(iso) {
  *  - handleKeyDown: fn(e)
  *  - autorLocal  : 'cliente' | 'pizzaria' — quem está usando esse componente
  */
-export default function Chat({ mensagens, texto, setTexto, enviar, handleKeyDown, autorLocal }) {
+export default function Chat({ mensagens, texto, setTexto, enviar, handleKeyDown, autorLocal, carregando }) {
   const fimRef = useRef(null);
 
   // Scroll automático para última mensagem
@@ -27,9 +27,12 @@ export default function Chat({ mensagens, texto, setTexto, enviar, handleKeyDown
     <div className="chat-wrapper">
 
       <div className="chat-mensagens">
-        {mensagens.length === 0 && (
+        {carregando && (
+          <div className="chat-vazio">Carregando histórico...</div>
+        )}
+        {!carregando && mensagens.length === 0 && (
           <div className="chat-vazio">
-            Nenhuma mensagem ainda.<br />Mande uma mensagem para a pizzaria!
+            Nenhuma mensagem ainda.<br />Mande uma mensagem!
           </div>
         )}
 
