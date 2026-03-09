@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useParams } from 'react-router-dom';
 import './Cardapio.css';
-
+import ModalPizza from './Modal/Modalpizza.jsx';
 const API = import.meta.env.VITE_API_URL || 'http://localhost:3001/api';
 
 async function getPizzaria(id) {
@@ -33,15 +33,23 @@ function ProdutoCard({ produto, onEscolher }) {
       ) : (
         <div className="produto-img-placeholder">🍕</div>
       )}
+
       <div className="produto-body">
         <h3 className="produto-nome">{produto.nome}</h3>
         <p className="produto-descricao">{produto.descricao}</p>
+
         <div className="produto-footer">
           <div>
             <div className="produto-preco-label">A partir de</div>
-            <div className="produto-preco">{formatarPreco(precoMinimo(produto.tamanhos))}</div>
+            <div className="produto-preco">
+              {formatarPreco(precoMinimo(produto.tamanhos))}
+            </div>
           </div>
-          <button className="btn-escolher" onClick={() => onEscolher(produto)}>
+
+          <button
+            className="btn-escolher"
+            onClick={() => onEscolher(produto)}
+          >
             Escolher
           </button>
         </div>
@@ -53,13 +61,14 @@ function ProdutoCard({ produto, onEscolher }) {
 export default function Cardapio() {
   const { pizzariaId } = useParams();
 
-  const [pizzaria, setPizzaria]             = useState(null);
-  const [produtos, setProdutos]             = useState([]);
-  const [categorias, setCategorias]         = useState([]);
+  const [pizzaria, setPizzaria] = useState(null);
+  const [produtos, setProdutos] = useState([]);
+  const [categorias, setCategorias] = useState([]);
   const [categoriaAtiva, setCategoriaAtiva] = useState('Todas');
-  const [busca, setBusca]                   = useState('');
-  const [loading, setLoading]               = useState(true);
-  const [erro, setErro]                     = useState(null);
+  const [busca, setBusca] = useState('');
+  const [loading, setLoading] = useState(true);
+  const [erro, setErro] = useState(null);
+  const [modalProduto, setModalProduto] = useState(null);
 
   useEffect(() => {
     getPizzaria(pizzariaId)
@@ -75,10 +84,14 @@ export default function Cardapio() {
 
   const produtosFiltrados = useMemo(() => {
     return produtos.filter((p) => {
-      const porCategoria = categoriaAtiva === 'Todas' || p.categorias?.includes(categoriaAtiva);
-      const porBusca = busca.trim() === '' ||
+      const porCategoria =
+        categoriaAtiva === 'Todas' || p.categorias?.includes(categoriaAtiva);
+
+      const porBusca =
+        busca.trim() === '' ||
         p.nome.toLowerCase().includes(busca.toLowerCase()) ||
         p.descricao?.toLowerCase().includes(busca.toLowerCase());
+
       return porCategoria && porBusca;
     });
   }, [produtos, categoriaAtiva, busca]);
@@ -89,7 +102,12 @@ export default function Cardapio() {
   }
 
   function handleEscolher(produto) {
-    console.log('Escolhido:', produto);
+    setModalProduto(produto);
+  }
+
+  function handleAdicionarAoPedido(item) {
+    console.log('Adicionado ao pedido:', item);
+    // conectar com carrinho depois
   }
 
   const abas = ['Todas', ...categorias];
@@ -101,17 +119,32 @@ export default function Cardapio() {
       <div className="banner">
         <img
           className="banner-img"
-          src={pizzaria?.banner || 'https://images.unsplash.com/photo-1513104890138-7c749659a591?w=1400&q=80'}
+          src={
+            pizzaria?.banner ||
+            'https://images.unsplash.com/photo-1513104890138-7c749659a591?w=1400&q=80'
+          }
           alt="Banner da pizzaria"
         />
+
         <div className="banner-overlay">
           <div className="banner-inner">
-            <h1 className="banner-nome">{pizzaria?.nome || 'Pizzaria'}</h1>
-            <p className="banner-slogan">Sabores autênticos da Itália</p>
+            <h1 className="banner-nome">
+              {pizzaria?.nome || 'Pizzaria'}
+            </h1>
+
+            <p className="banner-slogan">
+              Sabores autênticos da Itália
+            </p>
+
             <div className="banner-infos">
               <span className="banner-info">⭐ 4.8</span>
               <span className="banner-info">🕐 30-40 min</span>
-              <span className="banner-info">📍 {pizzaria?.endereco?.rua}, {pizzaria?.endereco?.numero} - {pizzaria?.endereco?.bairro}</span>
+
+              <span className="banner-info">
+                📍 {pizzaria?.endereco?.rua},{' '}
+                {pizzaria?.endereco?.numero} -{' '}
+                {pizzaria?.endereco?.bairro}
+              </span>
             </div>
           </div>
         </div>
@@ -122,6 +155,7 @@ export default function Cardapio() {
         <div className="busca-inner">
           <div className="busca-input-wrapper">
             <span className="busca-icon">🔍</span>
+
             <input
               className="busca-input"
               type="text"
@@ -139,7 +173,9 @@ export default function Cardapio() {
           {abas.map((cat) => (
             <button
               key={cat}
-              className={`categoria-tab ${categoriaAtiva === cat ? 'ativa' : ''}`}
+              className={`categoria-tab ${
+                categoriaAtiva === cat ? 'ativa' : ''
+              }`}
               onClick={() => setCategoriaAtiva(cat)}
             >
               {cat} ({contarCategoria(cat)})
@@ -148,24 +184,48 @@ export default function Cardapio() {
         </div>
       </div>
 
-      {/* Grid */}
+      {/* Produtos */}
       <div className="cardapio-container">
         <div className="produtos-grid">
+
           {loading && (
             <div className="estado-loading">
               <div className="spinner" />
               <p>Carregando cardápio...</p>
             </div>
           )}
-          {erro && <div className="estado-vazio"><p>⚠️ Erro: {erro}</p></div>}
-          {!loading && !erro && produtosFiltrados.length === 0 && (
-            <div className="estado-vazio"><p>🍕 Nenhuma pizza encontrada.</p></div>
+
+          {erro && (
+            <div className="estado-vazio">
+              <p>⚠️ Erro: {erro}</p>
+            </div>
           )}
-          {!loading && !erro && produtosFiltrados.map((p) => (
-            <ProdutoCard key={p._id} produto={p} onEscolher={handleEscolher} />
-          ))}
+
+          {!loading && !erro && produtosFiltrados.length === 0 && (
+            <div className="estado-vazio">
+              <p>🍕 Nenhuma pizza encontrada.</p>
+            </div>
+          )}
+
+          {!loading && !erro &&
+            produtosFiltrados.map((p) => (
+              <ProdutoCard
+                key={p._id}
+                produto={p}
+                onEscolher={handleEscolher}
+              />
+            ))}
         </div>
       </div>
+
+      {/* Modal */}
+      {modalProduto && (
+        <ModalPizza
+          produto={modalProduto}
+          onFechar={() => setModalProduto(null)}
+          onAdicionarAoPedido={handleAdicionarAoPedido}
+        />
+      )}
 
     </div>
   );
