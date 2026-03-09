@@ -1,10 +1,11 @@
-const router = require('express').Router();
+const router  = require('express').Router();
 const Produto = require('../models/Produto.model');
 
-// GET /api/produtos
+// GET /api/produtos?pizzariaId=xxx
 router.get('/', async (req, res) => {
   try {
-    const produtos = await Produto.find();
+    const filtro = req.query.pizzariaId ? { pizzariaId: req.query.pizzariaId } : {};
+    const produtos = await Produto.find(filtro).sort({ createdAt: -1 });
     res.json(produtos);
   } catch (err) {
     res.status(500).json({ erro: err.message });
@@ -32,10 +33,14 @@ router.post('/', async (req, res) => {
   }
 });
 
-// PUT /api/produtos/:id
-router.put('/:id', async (req, res) => {
+// PATCH /api/produtos/:id
+router.patch('/:id', async (req, res) => {
   try {
-    const produto = await Produto.findByIdAndUpdate(req.params.id, req.body, { new: true, runValidators: true });
+    const produto = await Produto.findByIdAndUpdate(
+      req.params.id,
+      req.body,
+      { new: true, runValidators: false }
+    );
     if (!produto) return res.status(404).json({ erro: 'Produto não encontrado' });
     res.json(produto);
   } catch (err) {
@@ -47,7 +52,7 @@ router.put('/:id', async (req, res) => {
 router.delete('/:id', async (req, res) => {
   try {
     await Produto.findByIdAndDelete(req.params.id);
-    res.json({ mensagem: 'Produto removido' });
+    res.json({ ok: true });
   } catch (err) {
     res.status(500).json({ erro: err.message });
   }

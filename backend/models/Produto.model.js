@@ -6,17 +6,20 @@ const AdicionalSchema = new mongoose.Schema({
 }, { _id: false });
 
 const TamanhoSchema = new mongoose.Schema({
-  tamanho:    { type: String, enum: ['Pequena', 'Média', 'Grande'], required: true },
+  tamanho:    { type: String, enum: ['Pequena', 'Media', 'Grande', 'Média', 'Médio'], required: true },
   preco:      { type: Number, required: true },
   maxSabores: { type: Number, required: true },
 }, { _id: false });
 
 const ProdutoSchema = new mongoose.Schema({
+  pizzariaId: { type: mongoose.Schema.Types.ObjectId, ref: 'Pizzaria', required: true },
   nome:       { type: String, required: true },
   descricao:  { type: String, default: '' },
-  categorias: { type: [String], default: [] }, // ex: ['Tradicional', 'Vegana']
+  imagem:     { type: String, default: '' },
+  categorias: { type: [String], default: [] },
   tamanhos:   { type: [TamanhoSchema], default: [] },
   adicionais: { type: [AdicionalSchema], default: [] },
+  ativo:      { type: Boolean, default: true },
 }, { timestamps: true });
 
 module.exports = mongoose.model('Produto', ProdutoSchema);
