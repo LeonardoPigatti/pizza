@@ -25,7 +25,6 @@ function extrairCategorias(produtos) {
   return [...new Set(todas)];
 }
 
-// ── Card ────────────────────────────────────────────────
 function ProdutoCard({ produto, onEscolher }) {
   return (
     <div className="produto-card">
@@ -34,17 +33,13 @@ function ProdutoCard({ produto, onEscolher }) {
       ) : (
         <div className="produto-img-placeholder">🍕</div>
       )}
-
       <div className="produto-body">
         <h3 className="produto-nome">{produto.nome}</h3>
         <p className="produto-descricao">{produto.descricao}</p>
-
         <div className="produto-footer">
           <div>
             <div className="produto-preco-label">A partir de</div>
-            <div className="produto-preco">
-              {formatarPreco(precoMinimo(produto.tamanhos))}
-            </div>
+            <div className="produto-preco">{formatarPreco(precoMinimo(produto.tamanhos))}</div>
           </div>
           <button className="btn-escolher" onClick={() => onEscolher(produto)}>
             Escolher
@@ -55,10 +50,10 @@ function ProdutoCard({ produto, onEscolher }) {
   );
 }
 
-// ── Página ───────────────────────────────────────────────
 export default function Cardapio() {
   const { pizzariaId } = useParams();
 
+  const [pizzaria, setPizzaria]             = useState(null);
   const [produtos, setProdutos]             = useState([]);
   const [categorias, setCategorias]         = useState([]);
   const [categoriaAtiva, setCategoriaAtiva] = useState('Todas');
@@ -69,6 +64,7 @@ export default function Cardapio() {
   useEffect(() => {
     getPizzaria(pizzariaId)
       .then((data) => {
+        setPizzaria(data);
         const cardapio = data.cardapio || [];
         setProdutos(cardapio);
         setCategorias(extrairCategorias(cardapio));
@@ -77,27 +73,22 @@ export default function Cardapio() {
       .finally(() => setLoading(false));
   }, [pizzariaId]);
 
-  // Filtra por categoria + busca
   const produtosFiltrados = useMemo(() => {
     return produtos.filter((p) => {
-      const porCategoria =
-        categoriaAtiva === 'Todas' || p.categorias?.includes(categoriaAtiva);
-      const porBusca =
-        busca.trim() === '' ||
+      const porCategoria = categoriaAtiva === 'Todas' || p.categorias?.includes(categoriaAtiva);
+      const porBusca = busca.trim() === '' ||
         p.nome.toLowerCase().includes(busca.toLowerCase()) ||
         p.descricao?.toLowerCase().includes(busca.toLowerCase());
       return porCategoria && porBusca;
     });
   }, [produtos, categoriaAtiva, busca]);
 
-  // Contagem por categoria
   function contarCategoria(cat) {
     if (cat === 'Todas') return produtos.length;
     return produtos.filter((p) => p.categorias?.includes(cat)).length;
   }
 
   function handleEscolher(produto) {
-    // TODO: abrir modal de personalização / carrinho
     console.log('Escolhido:', produto);
   }
 
@@ -105,6 +96,16 @@ export default function Cardapio() {
 
   return (
     <div>
+
+      {/* Banner */}
+      <div className="banner">
+        <img
+          className="banner-img"
+          src={pizzaria?.banner || 'https://images.unsplash.com/photo-1513104890138-7c749659a591?w=1400&q=80'}
+          alt="Banner da pizzaria"
+        />
+      </div>
+
       {/* Busca */}
       <div className="busca-wrapper">
         <div className="busca-input-wrapper">
@@ -141,26 +142,16 @@ export default function Cardapio() {
               <p>Carregando cardápio...</p>
             </div>
           )}
-
-          {erro && (
-            <div className="estado-vazio">
-              <p>⚠️ Erro: {erro}</p>
-            </div>
-          )}
-
+          {erro && <div className="estado-vazio"><p>⚠️ Erro: {erro}</p></div>}
           {!loading && !erro && produtosFiltrados.length === 0 && (
-            <div className="estado-vazio">
-              <p>🍕 Nenhuma pizza encontrada.</p>
-            </div>
+            <div className="estado-vazio"><p>🍕 Nenhuma pizza encontrada.</p></div>
           )}
-
-          {!loading &&
-            !erro &&
-            produtosFiltrados.map((p) => (
-              <ProdutoCard key={p._id} produto={p} onEscolher={handleEscolher} />
-            ))}
+          {!loading && !erro && produtosFiltrados.map((p) => (
+            <ProdutoCard key={p._id} produto={p} onEscolher={handleEscolher} />
+          ))}
         </div>
       </div>
+
     </div>
   );
 }
