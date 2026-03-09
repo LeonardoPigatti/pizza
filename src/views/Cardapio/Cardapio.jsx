@@ -88,6 +88,7 @@ export default function Cardapio() {
     getPizzaria(pizzariaId)
       .then((data) => {
         setPizzaria(data);
+        document.title = data.nome ? `${data.nome}` : 'Cardápio';
         const cardapio = data.cardapio || [];
         setProdutos(cardapio);
         setCategorias(extrairCategorias(cardapio));
