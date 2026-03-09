@@ -589,3 +589,50 @@
   0%, 100% { opacity: 1; }
   50%       { opacity: 0.55; }
 }
+
+/* ── Botão abrir mapa (motoboy) ── */
+.btn-mapa {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  margin-top: 6px;
+  background: #eff6ff;
+  color: #1d4ed8;
+  border: 1.5px solid #bfdbfe;
+  border-radius: 8px;
+  padding: 6px 12px;
+  font-size: 0.78rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s;
+  font-family: inherit;
+}
+
+.btn-mapa:hover {
+  background: #dbeafe;
+  border-color: #93c5fd;
+}
+
+/* ── Botão ligar ── */
+.btn-ligar {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  margin-top: 6px;
+  background: #f0fdf4;
+  color: #15803d;
+  border: 1.5px solid #bbf7d0;
+  border-radius: 8px;
+  padding: 6px 12px;
+  font-size: 0.78rem;
+  font-weight: 700;
+  cursor: pointer;
+  text-decoration: none;
+  transition: background 0.15s, border-color 0.15s;
+  font-family: inherit;
+}
+
+.btn-ligar:hover {
+  background: #dcfce7;
+  border-color: #86efac;
+}

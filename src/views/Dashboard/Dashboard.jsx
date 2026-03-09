@@ -202,6 +202,13 @@ export default function Dashboard() {
     setModalRetrocesso(null);
   }
 
+  function abrirMapa(endereco) {
+    const { rua, numero, bairro, cidade, cep } = endereco;
+    const query = encodeURIComponent(`${rua}, ${numero} - ${bairro}, ${cidade || ''} ${cep || ''}`);
+    // Tenta abrir o app nativo (Waze/Maps); cai no Google Maps web se não tiver
+    window.open(`https://www.google.com/maps/search/?api=1&query=${query}`, '_blank');
+  }
+
   async function pegarPizza(pedidoId) {
     const token = localStorage.getItem('token');
     try {
@@ -346,6 +353,22 @@ export default function Dashboard() {
                     {pedido.contato?.telefone}
                     {pedido.enderecoEntrega?.bairro && (
                       <span style={{ display: 'block' }}>📍 {pedido.enderecoEntrega.bairro}</span>
+                    )}
+                    {perfil === 'motoboy' && pedido.enderecoEntrega?.rua && (
+                      <button
+                        className="btn-mapa"
+                        onClick={() => abrirMapa(pedido.enderecoEntrega)}
+                      >
+                        🗺️ Abrir no Maps
+                      </button>
+                    )}
+                    {pedido.contato?.telefone && (
+                      <a
+                        className="btn-ligar"
+                        href={`tel:${pedido.contato.telefone.replace(/\D/g, '')}`}
+                      >
+                        📞 Ligar
+                      </a>
                     )}
                   </div>
                   <div style={{ fontSize: '0.9rem', fontWeight: 800, color: '#e03c1f' }}>

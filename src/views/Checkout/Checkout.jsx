@@ -106,7 +106,7 @@ export default function Checkout({ itens, subtotal, onPedidoConfirmado }) {
 
   // Mapeia os valores do frontend para os enums do Model
   const PAGAMENTO_MAP = {
-    online:   'Cartão online',
+    online:   'Cartao online',
     dinheiro: 'Dinheiro na entrega',
     maquina:  'Dinheiro na entrega',
   };
