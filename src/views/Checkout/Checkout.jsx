@@ -28,9 +28,9 @@ export default function Checkout({ itens, subtotal, onPedidoConfirmado }) {
   const [pagamento, setPagamento]             = useState('online');
   const [troco, setTroco]                     = useState('');
   const [pedidoConfirmado, setPedidoConfirmado] = useState(false);
-  const [numeroPedido]                        = useState(() =>
-    Math.floor(10000 + Math.random() * 90000).toString()
-  );
+  const [salvando, setSalvando]               = useState(false);
+  const [erroSalvar, setErroSalvar]           = useState(null);
+  const [numeroPedido, setNumeroPedido]       = useState('');
 
   const [dados, setDados] = useState({
     nome: '', telefone: '', cep: '', rua: '', numero: '', complemento: '', bairro: '',
@@ -78,9 +78,76 @@ export default function Checkout({ itens, subtotal, onPedidoConfirmado }) {
     setDados((prev) => ({ ...prev, [e.target.name]: e.target.value }));
   }
 
-  function confirmarPedido() {
-    setPedidoConfirmado(true);
-    if (onPedidoConfirmado) onPedidoConfirmado();
+  // Mapeia os valores do frontend para os enums do Model
+  const PAGAMENTO_MAP = {
+    online:   'Cartão online',
+    dinheiro: 'Dinheiro na entrega',
+    maquina:  'Dinheiro na entrega',
+  };
+
+  const TIPO_ENTREGA_MAP = {
+    entrega:  'Entrega',
+    retirada: 'Retirada',
+  };
+
+  async function confirmarPedido() {
+    setErroSalvar(null);
+    setSalvando(true);
+
+    const body = {
+      pizzas: itens.map((item) => ({
+        produtoId:  item.produtoId,
+        tamanho:    item.tamanho,
+        sabores:    item.sabores || [],
+        adicionais: (item.adicionais || []).map((a) => ({
+          nome:       a.nome,
+          preco:      a.preco,
+          quantidade: 1,
+        })),
+        quantidade: item.quantidade,
+        observacao: item.observacao || '',
+      })),
+      tipoEntrega: TIPO_ENTREGA_MAP[tipoEntrega],
+      enderecoEntrega: tipoEntrega === 'entrega' ? {
+        rua:         dados.rua,
+        numero:      dados.numero,
+        complemento: dados.complemento,
+        bairro:      dados.bairro,
+        cep:         dados.cep,
+      } : null,
+      contato: {
+        nome:     dados.nome,
+        telefone: dados.telefone,
+      },
+      cupom: cupomAplicado ? {
+        codigo:      cupom.trim().toUpperCase(),
+        desconto:    desconto,
+        porcentagem: cupomAplicado.desconto ? cupomAplicado.desconto * 100 : 0,
+        valido:      true,
+      } : null,
+      pagamento:           PAGAMENTO_MAP[pagamento],
+      statusPedido:        'Preparando',
+      tempoEsperaEstimado: tipoEntrega === 'retirada' ? 22 : 40,
+    };
+
+    try {
+      const API = import.meta.env.VITE_API_URL || 'http://localhost:3001/api';
+      const res  = await fetch(`${API}/pedidos`, {
+        method:  'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body:    JSON.stringify(body),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.erro || 'Erro ao salvar pedido');
+
+      setNumeroPedido(data._id.toString().slice(-5).toUpperCase());
+      setPedidoConfirmado(true);
+      if (onPedidoConfirmado) onPedidoConfirmado(data);
+    } catch (err) {
+      setErroSalvar(err.message);
+    } finally {
+      setSalvando(false);
+    }
   }
 
   // ── Tela de sucesso ──
@@ -380,9 +447,20 @@ export default function Checkout({ itens, subtotal, onPedidoConfirmado }) {
             Continuar →
           </button>
         ) : (
-          <button className="btn-confirmar-pedido" onClick={confirmarPedido}>
-            ✅ Confirmar Pedido · {formatarPreco(total)}
-          </button>
+          <>
+            {erroSalvar && (
+              <div style={{ color: '#ef4444', fontSize: '0.82rem', fontWeight: 600, textAlign: 'center', marginBottom: 8 }}>
+                ⚠️ {erroSalvar}
+              </div>
+            )}
+            <button
+              className="btn-confirmar-pedido"
+              onClick={confirmarPedido}
+              disabled={salvando}
+            >
+              {salvando ? '⏳ Salvando pedido...' : `✅ Confirmar Pedido · ${formatarPreco(total)}`}
+            </button>
+          </>
         )}
       </div>
 
