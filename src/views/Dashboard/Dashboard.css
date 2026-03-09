@@ -1,0 +1,280 @@
+/* ── Dashboard ── */
+.dashboard-page {
+  min-height: 100vh;
+  background: #f7f7f7;
+}
+
+/* ── Header ── */
+.dashboard-header {
+  background: #fff;
+  border-bottom: 1px solid #f0f0f0;
+  padding: 14px 24px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+
+.dashboard-header-esquerda {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.dashboard-logo { font-size: 1.4rem; }
+
+.dashboard-titulo {
+  font-size: 1rem;
+  font-weight: 800;
+  color: #1a1a1a;
+}
+
+.dashboard-subtitulo {
+  font-size: 0.75rem;
+  color: #aaa;
+  margin-top: 1px;
+}
+
+.btn-sair {
+  background: #f5f5f5;
+  border: none;
+  border-radius: 8px;
+  padding: 8px 14px;
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: #888;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.btn-sair:hover { background: #ffe9e4; color: #e03c1f; }
+
+/* ── Layout ── */
+.dashboard-layout {
+  max-width: 960px;
+  margin: 24px auto;
+  padding: 0 16px;
+}
+
+/* ── Cards de resumo ── */
+.dashboard-resumo {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 14px;
+  margin-bottom: 24px;
+}
+
+.resumo-card {
+  background: #fff;
+  border-radius: 14px;
+  padding: 18px;
+  border: 1.5px solid #f0f0f0;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.resumo-card-icone {
+  font-size: 1.8rem;
+  flex-shrink: 0;
+}
+
+.resumo-card-label {
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: #aaa;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+  margin-bottom: 3px;
+}
+
+.resumo-card-valor {
+  font-size: 1.4rem;
+  font-weight: 900;
+  color: #1a1a1a;
+  line-height: 1;
+}
+
+.resumo-card-valor.vermelho { color: #e03c1f; }
+.resumo-card-valor.verde    { color: #22c55e; }
+
+/* ── Filtros ── */
+.dashboard-filtros {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 16px;
+  flex-wrap: wrap;
+}
+
+.filtro-btn {
+  background: #fff;
+  border: 1.5px solid #e0e0e0;
+  border-radius: 99px;
+  padding: 7px 16px;
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: #555;
+  cursor: pointer;
+  transition: all 0.15s;
+  white-space: nowrap;
+}
+
+.filtro-btn:hover { border-color: #e03c1f; color: #e03c1f; }
+
+.filtro-btn.ativo {
+  background: #e03c1f;
+  border-color: #e03c1f;
+  color: #fff;
+}
+
+/* ── Lista de pedidos ── */
+.pedidos-lista {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+/* ── Card de pedido ── */
+.pedido-card {
+  background: #fff;
+  border-radius: 14px;
+  border: 1.5px solid #f0f0f0;
+  overflow: hidden;
+  animation: entradaCard 0.2s ease;
+  transition: border-color 0.15s;
+}
+
+.pedido-card:hover { border-color: #e8e8e8; }
+
+@keyframes entradaCard {
+  from { opacity: 0; transform: translateY(6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.pedido-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 18px;
+  border-bottom: 1px solid #f5f5f5;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.pedido-card-header-esquerda {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.pedido-numero {
+  font-size: 0.9rem;
+  font-weight: 800;
+  color: #1a1a1a;
+}
+
+.pedido-hora {
+  font-size: 0.75rem;
+  color: #aaa;
+  margin-top: 1px;
+}
+
+.pedido-badge-entrega {
+  background: #f5f5f5;
+  border-radius: 99px;
+  padding: 3px 10px;
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: #555;
+}
+
+/* Status badge */
+.pedido-status-badge {
+  border-radius: 99px;
+  padding: 5px 12px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.pedido-status-badge.preparando  { background: #fef9c3; color: #854d0e; }
+.pedido-status-badge.saiu        { background: #dbeafe; color: #1e40af; }
+.pedido-status-badge.pronto      { background: #dcfce7; color: #166534; }
+
+/* ── Body do card ── */
+.pedido-card-body {
+  padding: 14px 18px;
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.pedido-itens {
+  flex: 1;
+}
+
+.pedido-item-linha {
+  font-size: 0.85rem;
+  color: #555;
+  margin-bottom: 4px;
+  line-height: 1.4;
+}
+
+.pedido-item-linha strong {
+  color: #1a1a1a;
+}
+
+.pedido-item-detalhe {
+  font-size: 0.75rem;
+  color: #aaa;
+}
+
+.pedido-card-direita {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.pedido-contato {
+  font-size: 0.78rem;
+  color: #888;
+  text-align: right;
+  line-height: 1.5;
+}
+
+.pedido-contato strong { color: #333; display: block; }
+
+/* ── Loading / Erro / Vazio ── */
+.dashboard-loading,
+.dashboard-vazio {
+  text-align: center;
+  padding: 60px 20px;
+  color: #aaa;
+  font-size: 0.9rem;
+}
+
+.dashboard-spinner {
+  width: 36px;
+  height: 36px;
+  border: 3px solid #f0f0f0;
+  border-top-color: #e03c1f;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+  margin: 0 auto 16px;
+}
+
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* ── Responsivo ── */
+@media (max-width: 600px) {
+  .dashboard-resumo { grid-template-columns: 1fr 1fr; }
+  .dashboard-resumo .resumo-card:last-child { grid-column: 1 / -1; }
+  .pedido-card-body { flex-direction: column; }
+  .pedido-card-direita { align-items: flex-start; }
+}
