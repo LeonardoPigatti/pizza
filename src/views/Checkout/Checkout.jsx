@@ -78,9 +78,35 @@ export default function Checkout({ itens, subtotal, onPedidoConfirmado }) {
     setDados((prev) => ({ ...prev, [e.target.name]: e.target.value }));
   }
 
+  const [buscandoCep, setBuscandoCep] = useState(false);
+  const [erroCep, setErroCep]         = useState(null);
+
+  async function buscarCep(cep) {
+    const limpo = cep.replace(/\D/g, '');
+    if (limpo.length !== 8) return;
+    setBuscandoCep(true);
+    setErroCep(null);
+    try {
+      const res  = await fetch(`https://viacep.com.br/ws/${limpo}/json/`);
+      const data = await res.json();
+      if (data.erro) { setErroCep('CEP não encontrado.'); return; }
+      setDados(prev => ({
+        ...prev,
+        rua:    data.logradouro || prev.rua,
+        bairro: data.bairro     || prev.bairro,
+        cidade: data.localidade || prev.cidade,
+        estado: data.uf         || prev.estado,
+      }));
+    } catch {
+      setErroCep('Erro ao buscar CEP.');
+    } finally {
+      setBuscandoCep(false);
+    }
+  }
+
   // Mapeia os valores do frontend para os enums do Model
   const PAGAMENTO_MAP = {
-    online:   'Cartao online',
+    online:   'Cartão online',
     dinheiro: 'Dinheiro na entrega',
     maquina:  'Dinheiro na entrega',
   };
@@ -253,7 +279,28 @@ export default function Checkout({ itens, subtotal, onPedidoConfirmado }) {
                 <>
                   <div className="form-group">
                     <label className="form-label">CEP *</label>
-                    <input className="form-input" name="cep" placeholder="00000-000" value={dados.cep} onChange={handleDados} />
+                    <div style={{ position: 'relative' }}>
+                      <input
+                        className={`form-input ${erroCep ? 'input-erro' : ''}`}
+                        name="cep"
+                        placeholder="00000-000"
+                        value={dados.cep}
+                        maxLength={9}
+                        onChange={e => {
+                          // Formata automaticamente 00000-000
+                          const val = e.target.value.replace(/\D/g, '').slice(0, 8);
+                          const fmt = val.length > 5 ? val.slice(0,5) + '-' + val.slice(5) : val;
+                          setDados(prev => ({ ...prev, cep: fmt }));
+                          if (val.length === 8) buscarCep(val);
+                        }}
+                      />
+                      {buscandoCep && (
+                        <span style={{ position: 'absolute', right: 10, top: '50%', transform: 'translateY(-50%)', fontSize: '0.75rem', color: '#e03c1f' }}>
+                          buscando...
+                        </span>
+                      )}
+                    </div>
+                    {erroCep && <div style={{ fontSize: '0.75rem', color: '#ef4444', marginTop: 4 }}>{erroCep}</div>}
                   </div>
                   <div className="form-group">
                     <label className="form-label">Número *</label>
@@ -286,7 +333,7 @@ export default function Checkout({ itens, subtotal, onPedidoConfirmado }) {
               </div>
               <div className="pagamento-opcoes">
                 {[
-                  { id: 'online',   icone: '💳', titulo: 'Pagar agora (online)',    desc: 'Cartao de crédito, débito ou Pix' },
+                  { id: 'online',   icone: '💳', titulo: 'Pagar agora (online)',    desc: 'Cartão de crédito, débito ou Pix' },
                   { id: 'dinheiro', icone: '💵', titulo: 'Dinheiro na entrega',     desc: 'Informe se precisa de troco' },
                   { id: 'maquina',  icone: '📱', titulo: 'Máquina na entrega',      desc: 'Crédito ou débito na entrega' },
                 ].map((op) => (

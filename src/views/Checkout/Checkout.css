@@ -583,3 +583,5 @@
   .checkout-steps { padding: 16px 12px 0; }
   .step-label { font-size: 0.6rem; }
 }
+
+.form-input.input-erro { border-color: #ef4444; }
