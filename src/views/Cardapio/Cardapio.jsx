@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
 import './Cardapio.css';
 import ModalPizza from '../Modal/Modalpizza.jsx';
 import Carrinho, { CarrinhoFAB } from '../Carrinho/Carrinho.jsx';
@@ -63,15 +63,16 @@ function ProdutoCard({ produto, onEscolher }) {
 
 export default function Cardapio() {
   const { pizzariaId } = useParams();
+  const navigate = useNavigate();
 
-  const [pizzaria, setPizzaria] = useState(null);
-  const [produtos, setProdutos] = useState([]);
-  const [categorias, setCategorias] = useState([]);
+  const [pizzaria, setPizzaria]           = useState(null);
+  const [produtos, setProdutos]           = useState([]);
+  const [categorias, setCategorias]       = useState([]);
   const [categoriaAtiva, setCategoriaAtiva] = useState('Todas');
-  const [busca, setBusca] = useState('');
-  const [loading, setLoading] = useState(true);
-  const [erro, setErro] = useState(null);
-  const [modalProduto, setModalProduto] = useState(null);
+  const [busca, setBusca]                 = useState('');
+  const [loading, setLoading]             = useState(true);
+  const [erro, setErro]                   = useState(null);
+  const [modalProduto, setModalProduto]   = useState(null);
   const [carrinhoAberto, setCarrinhoAberto] = useState(false);
 
   const {
@@ -121,6 +122,13 @@ export default function Cardapio() {
   function handleAdicionarAoPedido(item) {
     adicionarItem(item);
     setCarrinhoAberto(true);
+  }
+
+  function handleFinalizarPedido() {
+    setCarrinhoAberto(false);
+    navigate(`/checkout/${pizzariaId}`, {
+      state: { itens, subtotal },
+    });
   }
 
   const abas = ['Todas', ...categorias];
@@ -252,10 +260,7 @@ export default function Cardapio() {
           onFechar={() => setCarrinhoAberto(false)}
           onAlterarQtd={alterarQuantidade}
           onRemover={removerItem}
-          onFinalizarPedido={() => {
-            // conectar com checkout depois
-            console.log('Pedido finalizado:', itens);
-          }}
+          onFinalizarPedido={handleFinalizarPedido}
         />
       )}
 
