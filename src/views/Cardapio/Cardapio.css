@@ -37,11 +37,15 @@ body {
 /* ── Busca ── */
 .busca-wrapper {
   background: var(--surface);
-  padding: 16px 24px;
-  border-bottom: 1px solid var(--border);
   position: sticky;
   top: 0;
   z-index: 100;
+}
+
+.busca-inner {
+  max-width: 1320px;
+  margin: 0 auto;
+  padding: 16px 24px;
 }
 
 .busca-input-wrapper {
@@ -70,11 +74,17 @@ body {
 .busca-input::placeholder { color: #aaa; }
 
 /* ── Categorias ── */
+.categorias-bar-wrapper {
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+}
+
 .categorias-bar {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
-  background: var(--surface);
-  border-bottom: 1px solid var(--border);
+  max-width: 1320px;
+  margin: 0 auto;
+  padding: 0 24px;
 }
 
 .categoria-tab {
@@ -250,8 +260,14 @@ body {
   bottom: 0;
   left: 0;
   right: 0;
-  padding: 32px 28px 20px;
   background: linear-gradient(to top, rgba(0,0,0,0.72) 0%, transparent 100%);
+  padding: 32px 0 20px;
+}
+
+.banner-inner {
+  max-width: 1320px;
+  margin: 0 auto;
+  padding: 0 24px;
 }
 
 .banner-nome {

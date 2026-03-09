@@ -105,41 +105,47 @@ export default function Cardapio() {
           alt="Banner da pizzaria"
         />
         <div className="banner-overlay">
-          <h1 className="banner-nome">{pizzaria?.nome || 'Pizzaria'}</h1>
-          <p className="banner-slogan">Sabores autênticos da Itália</p>
-          <div className="banner-infos">
-            <span className="banner-info">⭐ 4.8</span>
-            <span className="banner-info">🕐 30-40 min</span>
-            <span className="banner-info">📍 {pizzaria?.endereco?.rua}, {pizzaria?.endereco?.numero} - {pizzaria?.endereco?.bairro}</span>
+          <div className="banner-inner">
+            <h1 className="banner-nome">{pizzaria?.nome || 'Pizzaria'}</h1>
+            <p className="banner-slogan">Sabores autênticos da Itália</p>
+            <div className="banner-infos">
+              <span className="banner-info">⭐ 4.8</span>
+              <span className="banner-info">🕐 30-40 min</span>
+              <span className="banner-info">📍 {pizzaria?.endereco?.rua}, {pizzaria?.endereco?.numero} - {pizzaria?.endereco?.bairro}</span>
+            </div>
           </div>
         </div>
       </div>
 
       {/* Busca */}
       <div className="busca-wrapper">
-        <div className="busca-input-wrapper">
-          <span className="busca-icon">🔍</span>
-          <input
-            className="busca-input"
-            type="text"
-            placeholder="Buscar pizza..."
-            value={busca}
-            onChange={(e) => setBusca(e.target.value)}
-          />
+        <div className="busca-inner">
+          <div className="busca-input-wrapper">
+            <span className="busca-icon">🔍</span>
+            <input
+              className="busca-input"
+              type="text"
+              placeholder="Buscar pizza..."
+              value={busca}
+              onChange={(e) => setBusca(e.target.value)}
+            />
+          </div>
         </div>
       </div>
 
       {/* Categorias */}
-      <div className="categorias-bar">
-        {abas.map((cat) => (
-          <button
-            key={cat}
-            className={`categoria-tab ${categoriaAtiva === cat ? 'ativa' : ''}`}
-            onClick={() => setCategoriaAtiva(cat)}
-          >
-            {cat} ({contarCategoria(cat)})
-          </button>
-        ))}
+      <div className="categorias-bar-wrapper">
+        <div className="categorias-bar">
+          {abas.map((cat) => (
+            <button
+              key={cat}
+              className={`categoria-tab ${categoriaAtiva === cat ? 'ativa' : ''}`}
+              onClick={() => setCategoriaAtiva(cat)}
+            >
+              {cat} ({contarCategoria(cat)})
+            </button>
+          ))}
+        </div>
       </div>
 
       {/* Grid */}
