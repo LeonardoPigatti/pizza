@@ -1,0 +1,205 @@
+.ca-page {
+  min-height: 100vh;
+  background: #fafafa;
+}
+
+/* ── Header ── */
+.ca-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 20px;
+  background: #fff;
+  border-bottom: 1px solid #f0f0f0;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+
+.ca-btn-voltar {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  border: none;
+  background: #f5f5f5;
+  font-size: 1rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  transition: background 0.15s;
+}
+.ca-btn-voltar:hover { background: #ebebeb; }
+
+.ca-header-info { flex: 1; }
+
+.ca-titulo {
+  font-size: 1rem;
+  font-weight: 800;
+  color: #1a1a1a;
+  margin: 0;
+}
+
+.ca-subtitulo {
+  font-size: 0.75rem;
+  color: #aaa;
+  margin: 1px 0 0;
+}
+
+.ca-btn-novo {
+  background: #e03c1f;
+  color: #fff;
+  border: none;
+  border-radius: 10px;
+  padding: 8px 16px;
+  font-size: 0.85rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 0.15s;
+  flex-shrink: 0;
+}
+.ca-btn-novo:hover:not(:disabled) { background: #c4331a; }
+.ca-btn-novo:disabled { opacity: 0.4; cursor: not-allowed; }
+
+/* ── Layout ── */
+.ca-layout {
+  max-width: 680px;
+  margin: 0 auto;
+  padding: 20px 16px;
+}
+
+/* ── Estados ── */
+.ca-loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 60px 0;
+  gap: 12px;
+  color: #aaa;
+}
+
+.ca-spinner {
+  width: 28px;
+  height: 28px;
+  border: 3px solid #f0f0f0;
+  border-top-color: #e03c1f;
+  border-radius: 50%;
+  animation: caSpin 0.8s linear infinite;
+}
+
+@keyframes caSpin { to { transform: rotate(360deg); } }
+
+.ca-erro {
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  color: #dc2626;
+  border-radius: 10px;
+  padding: 12px 16px;
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+.ca-vazio {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 60px 0;
+  gap: 10px;
+  color: #bbb;
+  font-size: 0.9rem;
+}
+.ca-vazio span { font-size: 2.5rem; }
+
+/* ── Lista ── */
+.ca-lista {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.ca-card {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  background: #fff;
+  border-radius: 14px;
+  border: 1px solid #f0f0f0;
+  padding: 14px;
+  transition: box-shadow 0.15s;
+}
+.ca-card:hover { box-shadow: 0 2px 12px rgba(0,0,0,0.06); }
+
+.ca-card-img {
+  width: 64px;
+  height: 64px;
+  border-radius: 10px;
+  overflow: hidden;
+  flex-shrink: 0;
+  background: #f5f5f5;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.8rem;
+}
+.ca-card-img img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.ca-card-info { flex: 1; min-width: 0; }
+
+.ca-card-nome {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: #1a1a1a;
+  margin-bottom: 3px;
+}
+
+.ca-card-descricao {
+  font-size: 0.78rem;
+  color: #888;
+  margin-bottom: 8px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.ca-card-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.ca-tag {
+  background: #f5f5f5;
+  color: #555;
+  border-radius: 6px;
+  padding: 2px 8px;
+  font-size: 0.7rem;
+  font-weight: 600;
+}
+
+.ca-tag.preco {
+  background: #fff5f5;
+  color: #e03c1f;
+}
+
+.ca-card-acoes { flex-shrink: 0; }
+
+.ca-btn-editar {
+  width: 34px;
+  height: 34px;
+  border-radius: 8px;
+  border: 1.5px solid #e8e8e8;
+  background: #fff;
+  cursor: pointer;
+  font-size: 0.9rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.12s;
+}
+.ca-btn-editar:hover:not(:disabled) { background: #f5f5f5; }
+.ca-btn-editar:disabled { opacity: 0.35; cursor: not-allowed; }

@@ -4,7 +4,8 @@ import CheckoutPage   from './views/Checkout/CheckoutPage.jsx';
 import StatusPedido   from './views/Status/StatusPedido.jsx';
 import Login          from './views/Login/Login.jsx';
 import Dashboard      from './views/Dashboard/Dashboard.jsx';
-import PerfilPizzaria from './views/PerfilPizzaria/PerfilPizzaria.jsx';
+import PerfilPizzaria  from './views/PerfilPizzaria/PerfilPizzaria.jsx';
+import CardapioAdmin  from './views/CardapioAdmin/Cardapioadmin.jsx';
 
 export default function App() {
   return (
@@ -15,7 +16,8 @@ export default function App() {
         <Route path="/status/:pedidoId"      element={<StatusPedido />} />
         <Route path="/login"                 element={<Login />} />
         <Route path="/dashboard/:pizzariaId" element={<Dashboard />} />
-        <Route path="/perfil/:pizzariaId"    element={<PerfilPizzaria />} />
+        <Route path="/perfil/:pizzariaId"         element={<PerfilPizzaria />} />
+        <Route path="/cardapio-admin/:pizzariaId" element={<CardapioAdmin />} />
 
         {/* Rota genérica por último */}
         <Route path="/:pizzariaId"           element={<Cardapio />} />

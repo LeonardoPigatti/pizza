@@ -115,7 +115,8 @@ export default function Dashboard() {
   const [chatPedidoId, setChatPedidoId]   = useState(null);
 
   // Modal de retrocesso
-  const [modalRetrocesso, setModalRetrocesso] = useState(null); // { pedido, novoStatus }
+  const [modalRetrocesso, setModalRetrocesso] = useState(null);
+  const [menuAberto, setMenuAberto]           = useState(false); // { pedido, novoStatus }
 
   const perfil = usuario?.perfil || 'admin';
   const autorLabel = perfil === 'motoboy'
@@ -248,9 +249,34 @@ export default function Dashboard() {
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
           {perfil === 'admin' && (
-            <button className="btn-perfil-pizzaria" onClick={() => navigate(`/perfil/${pizzariaId}`)} title="Editar perfil da pizzaria">
-              🍕
-            </button>
+            <div className="menu-admin-wrapper">
+              <button
+                className="btn-perfil-pizzaria"
+                onClick={() => setMenuAberto(p => !p)}
+                title="Menu da pizzaria"
+              >
+                🍕
+              </button>
+              {menuAberto && (
+                <>
+                  <div className="menu-admin-overlay" onClick={() => setMenuAberto(false)} />
+                  <div className="menu-admin-dropdown">
+                    <button
+                      className="menu-admin-item"
+                      onClick={() => { setMenuAberto(false); navigate(`/perfil/${pizzariaId}`); }}
+                    >
+                      ✏️ Editar perfil
+                    </button>
+                    <button
+                      className="menu-admin-item"
+                      onClick={() => { setMenuAberto(false); navigate(`/cardapio-admin/${pizzariaId}`); }}
+                    >
+                      🍕 Editar cardápio
+                    </button>
+                  </div>
+                </>
+              )}
+            </div>
           )}
           <button className="btn-sair" onClick={sair}>Sair</button>
         </div>
