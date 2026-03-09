@@ -104,6 +104,15 @@ export default function Cardapio() {
           src={pizzaria?.banner || 'https://images.unsplash.com/photo-1513104890138-7c749659a591?w=1400&q=80'}
           alt="Banner da pizzaria"
         />
+        <div className="banner-overlay">
+          <h1 className="banner-nome">{pizzaria?.nome || 'Pizzaria'}</h1>
+          <p className="banner-slogan">Sabores autênticos da Itália</p>
+          <div className="banner-infos">
+            <span className="banner-info">⭐ 4.8</span>
+            <span className="banner-info">🕐 30-40 min</span>
+            <span className="banner-info">📍 {pizzaria?.endereco?.rua}, {pizzaria?.endereco?.numero} - {pizzaria?.endereco?.bairro}</span>
+          </div>
+        </div>
       </div>
 
       {/* Busca */}
