@@ -27,16 +27,26 @@ function calcularTotalPedido(pedido) {
 }
 
 const FILTROS = [
-  { label: 'Todos',            valor: 'todos' },
-  { label: '👨‍🍳 Preparando',   valor: 'Preparando' },
-  { label: '🛵 Saiu para entrega', valor: 'Saiu para entrega' },
-  { label: '✅ Pronto',        valor: 'Pronto' },
+  { label: 'Todos',                   valor: 'todos' },
+  { label: '⏳ Aguardando',           valor: 'Aguardando confirmação' },
+  { label: '👨‍🍳 Preparando',          valor: 'Preparando' },
+  { label: '🛵 Saiu para entrega',    valor: 'Saiu para entrega' },
+  { label: '✅ Concluido',            valor: 'Concluido' },
 ];
 
+// Próximo status na sequência
+const PROXIMO_STATUS = {
+  'Aguardando confirmação': { label: '👨‍🍳 Confirmar e Preparar', valor: 'Preparando' },
+  'Preparando':             { label: '🛵 Saiu para Entrega',      valor: 'Saiu para entrega' },
+  'Saiu para entrega':      { label: '✅ Marcar como Concluido',  valor: 'Concluido' },
+  'Concluido':              null,
+};
+
 function statusClass(status) {
-  if (status === 'Preparando')      return 'preparando';
-  if (status === 'Saiu para entrega') return 'saiu';
-  if (status === 'Pronto')          return 'pronto';
+  if (status === 'Aguardando confirmação') return 'aguardando';
+  if (status === 'Preparando')             return 'preparando';
+  if (status === 'Saiu para entrega')      return 'saiu';
+  if (status === 'Concluido')              return 'concluido';
   return '';
 }
 
@@ -96,6 +106,22 @@ export default function Dashboard() {
 
   const emAndamento = pedidos.filter(p => p.statusPedido !== 'Pronto').length;
   const faturamentoHoje = totalHoje.reduce((s, p) => s + calcularTotalPedido(p), 0);
+
+  async function atualizarStatus(pedidoId, novoStatus) {
+    const token = localStorage.getItem('token');
+    try {
+      const res  = await fetch(`${API}/pedidos/${pedidoId}/status`, {
+        method:  'PATCH',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body:    JSON.stringify({ statusPedido: novoStatus }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.erro);
+      setPedidos(prev => prev.map(p => p._id === pedidoId ? { ...p, statusPedido: novoStatus } : p));
+    } catch (err) {
+      alert('Erro ao atualizar status: ' + err.message);
+    }
+  }
 
   function sair() {
     localStorage.removeItem('token');
@@ -234,6 +260,14 @@ export default function Dashboard() {
                   <div style={{ fontSize: '0.75rem', color: '#aaa' }}>
                     💳 {pedido.pagamento}
                   </div>
+                  {PROXIMO_STATUS[pedido.statusPedido] && (
+                    <button
+                      className="btn-proximo-status"
+                      onClick={() => atualizarStatus(pedido._id, PROXIMO_STATUS[pedido.statusPedido].valor)}
+                    >
+                      {PROXIMO_STATUS[pedido.statusPedido].label}
+                    </button>
+                  )}
                 </div>
               </div>
 

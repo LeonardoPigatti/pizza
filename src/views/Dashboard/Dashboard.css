@@ -278,3 +278,27 @@
   .pedido-card-body { flex-direction: column; }
   .pedido-card-direita { align-items: flex-start; }
 }
+
+/* ── Status aguardando ── */
+.pedido-status-badge.aguardando { background: #fff7ed; color: #c2410c; }
+.pedido-status-badge.concluido  { background: #dcfce7; color: #166534; }
+
+/* ── Botão próximo status ── */
+.btn-proximo-status {
+  background: #1a1a1a;
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  padding: 8px 14px;
+  font-size: 0.78rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 0.15s, transform 0.1s;
+  white-space: nowrap;
+  margin-top: 4px;
+}
+
+.btn-proximo-status:hover {
+  background: #e03c1f;
+  transform: translateY(-1px);
+}

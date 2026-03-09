@@ -11,49 +11,60 @@ function formatarPreco(valor) {
 // Ordem e descrição de cada status
 const STATUS_STEPS = [
   {
-    key:   'Preparando',
-    icone: '👨‍🍳',
+    key:    'Aguardando confirmação',
+    icone:  '⏳',
+    titulo: 'Aguardando confirmação',
+    desc:   'O restaurante vai confirmar seu pedido em breve',
+  },
+  {
+    key:    'Preparando',
+    icone:  '👨‍🍳',
     titulo: 'Preparando',
     desc:   'Seu pedido está sendo preparado com carinho',
   },
   {
-    key:   'Saiu para entrega',
-    icone: '🛵',
+    key:    'Saiu para entrega',
+    icone:  '🛵',
     titulo: 'Saiu para entrega',
     desc:   'Seu pedido está a caminho!',
   },
   {
-    key:   'Pronto',
-    icone: '✅',
-    titulo: 'Entregue / Pronto',
+    key:    'Concluido',
+    icone:  '✅',
+    titulo: 'Entregue',
     desc:   'Pedido entregue. Bom apetite!',
   },
 ];
 
-// Para retirada, o segundo passo é diferente
 const STATUS_STEPS_RETIRADA = [
   {
-    key:   'Preparando',
-    icone: '👨‍🍳',
+    key:    'Aguardando confirmação',
+    icone:  '⏳',
+    titulo: 'Aguardando confirmação',
+    desc:   'O restaurante vai confirmar seu pedido em breve',
+  },
+  {
+    key:    'Preparando',
+    icone:  '👨‍🍳',
     titulo: 'Preparando',
     desc:   'Seu pedido está sendo preparado',
   },
   {
-    key:   'Saiu para entrega',
-    icone: '🔔',
+    key:    'Saiu para entrega',
+    icone:  '🔔',
     titulo: 'Pronto para retirada',
     desc:   'Pode vir buscar no balcão!',
   },
   {
-    key:   'Pronto',
-    icone: '✅',
+    key:    'Concluido',
+    icone:  '✅',
     titulo: 'Retirado',
     desc:   'Pedido retirado. Bom apetite!',
   },
 ];
 
 function indiceStatus(statusAtual) {
-  const ordem = ['Preparando', 'Saiu para entrega', 'Pronto'];
+  const ordem = ['Aguardando confirmação', 'Preparando', 'Saiu para entrega', 'Concluido'];
   return ordem.indexOf(statusAtual);
 }
 
@@ -136,7 +147,7 @@ export default function StatusPedido() {
   const idxAtual     = indiceStatus(statusAtual);
   const ehRetirada   = pedido.tipoEntrega === 'Retirada';
   const steps        = ehRetirada ? STATUS_STEPS_RETIRADA : STATUS_STEPS;
-  const pedidoPronto = statusAtual === 'Pronto';
+  const pedidoPronto = statusAtual === 'Concluido';
 
   return (
     <div className="status-page">

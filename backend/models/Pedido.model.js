@@ -40,14 +40,18 @@ const CupomSchema = new mongoose.Schema({
 }, { _id: false });
 
 const PedidoSchema = new mongoose.Schema({
-  pizzas:               { type: [PizzaPedidoSchema], required: true },
-  tipoEntrega:          { type: String, enum: ['Entrega', 'Retirada'], required: true },
-  enderecoEntrega:      { type: EnderecoEntregaSchema, default: null },
-  contato:              { type: ContatoSchema, required: true },
-  cupom:                { type: CupomSchema, default: null },
-  pagamento:            { type: String, enum: ['Cartão online', 'Dinheiro na entrega'], required: true },
-  statusPedido:         { type: String, enum: ['Preparando', 'Saiu para entrega', 'Pronto'], default: 'Preparando' },
-  tempoEsperaEstimado:  { type: Number, default: 40 }, // em minutos
+  pizzas:              { type: [PizzaPedidoSchema], required: true },
+  tipoEntrega:         { type: String, enum: ['Entrega', 'Retirada'], required: true },
+  enderecoEntrega:     { type: EnderecoEntregaSchema, default: null },
+  contato:             { type: ContatoSchema, required: true },
+  cupom:               { type: CupomSchema, default: null },
+  pagamento:           { type: String, enum: ['Cartão online', 'Dinheiro na entrega'], required: true },
+  statusPedido:        {
+    type: String,
+    enum: ['Aguardando confirmacao', 'Preparando', 'Saiu para entrega', 'Concluido'],
+    default: 'Aguardando confirmação',
+  },
+  tempoEsperaEstimado: { type: Number, default: 40 },
 }, { timestamps: true });
 
 module.exports = mongoose.model('Pedido', PedidoSchema);
