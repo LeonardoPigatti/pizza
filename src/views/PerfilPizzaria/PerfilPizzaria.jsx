@@ -1,14 +1,21 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import './PerfilPizzaria.css';
 
 const API = import.meta.env.VITE_API_URL || 'http://localhost:3001/api';
 
+const VAZIO = {
+  nome: '', descricao: '', telefone: '', email: '', banner: '', logo: '',
+  endereco: { rua: '', numero: '', complemento: '', bairro: '', cidade: '', estado: '', cep: '' },
+  horarios:  { abertura: '18:00', fechamento: '23:00' },
+  tempoMedioEntrega: 40,
+};
+
 export default function PerfilPizzaria() {
   const { pizzariaId } = useParams();
   const navigate       = useNavigate();
 
-  const [dados, setDados]       = useState(null);
+  const [dados, setDados]       = useState(VAZIO);
   const [loading, setLoading]   = useState(true);
   const [salvando, setSalvando] = useState(false);
   const [sucesso, setSucesso]   = useState(false);
@@ -22,27 +29,29 @@ export default function PerfilPizzaria() {
       .then(r => r.json())
       .then(data => {
         setDados({
-          nome:        data.nome        || '',
-          descricao:   data.descricao   || '',
-          telefone:    data.telefone    || '',
-          email:       data.email       || '',
-          banner:      data.banner      || '',
-          logo:        data.logo        || '',
+          nome:      data.nome      || '',
+          descricao: data.descricao || '',
+          telefone:  data.telefone  || '',
+          email:     data.email     || '',
+          banner:    data.banner    || '',
+          logo:      data.logo      || '',
           endereco: {
-            rua:    data.endereco?.rua    || '',
-            numero: data.endereco?.numero || '',
-            bairro: data.endereco?.bairro || '',
-            cidade: data.endereco?.cidade || '',
-            estado: data.endereco?.estado || '',
-            cep:    data.endereco?.cep    || '',
+            rua:         data.endereco?.rua         || '',
+            numero:      data.endereco?.numero      || '',
+            complemento: data.endereco?.complemento || '',
+            bairro:      data.endereco?.bairro      || '',
+            cidade:      data.endereco?.cidade      || '',
+            estado:      data.endereco?.estado      || '',
+            cep:         data.endereco?.cep         || '',
           },
           horarios: {
             abertura:   data.horarios?.abertura   || '18:00',
             fechamento: data.horarios?.fechamento || '23:00',
           },
+          tempoMedioEntrega: data.tempoMedioEntrega ?? 40,
         });
       })
-      .catch(() => setErro('Erro ao carregar dados da pizzaria'))
+      .catch(() => setErro('Erro ao carregar dados'))
       .finally(() => setLoading(false));
   }, [pizzariaId]);
 
@@ -50,12 +59,12 @@ export default function PerfilPizzaria() {
     const { name, value } = e.target;
     if (name.startsWith('endereco.')) {
       const campo = name.split('.')[1];
-      setDados(prev => ({ ...prev, endereco: { ...prev.endereco, [campo]: value } }));
+      setDados(p => ({ ...p, endereco: { ...p.endereco, [campo]: value } }));
     } else if (name.startsWith('horarios.')) {
       const campo = name.split('.')[1];
-      setDados(prev => ({ ...prev, horarios: { ...prev.horarios, [campo]: value } }));
+      setDados(p => ({ ...p, horarios: { ...p.horarios, [campo]: value } }));
     } else {
-      setDados(prev => ({ ...prev, [name]: value }));
+      setDados(p => ({ ...p, [name]: value }));
     }
   }
 
@@ -88,8 +97,6 @@ export default function PerfilPizzaria() {
     </div>
   );
 
-  if (!dados) return null;
-
   return (
     <div className="perfil-page">
 
@@ -98,14 +105,16 @@ export default function PerfilPizzaria() {
         <button className="perfil-btn-voltar" onClick={() => navigate(-1)}>←</button>
         <div className="perfil-header-info">
           <h1 className="perfil-titulo">Perfil da Pizzaria</h1>
-          <p className="perfil-subtitulo">Gerencie as informações do seu estabelecimento</p>
+          <p className="perfil-subtitulo">{dados.nome}</p>
         </div>
         <button className="perfil-btn-salvar" onClick={salvar} disabled={salvando}>
-          {salvando ? '⏳ Salvando...' : sucesso ? '✓ Salvo!' : 'Salvar'}
+          {salvando ? '⏳' : sucesso ? '✓ Salvo!' : 'Salvar'}
         </button>
       </div>
 
-      {erro && <div className="perfil-erro">⚠️ {erro}</div>}
+      {/* Feedback */}
+      {erro    && <div className="perfil-feedback erro">⚠️ {erro}</div>}
+      {sucesso && <div className="perfil-feedback ok">✓ Alterações salvas com sucesso!</div>}
 
       <div className="perfil-layout">
 
@@ -119,15 +128,17 @@ export default function PerfilPizzaria() {
             </div>
             <div className="perfil-campo full">
               <label>Descrição</label>
-              <textarea name="descricao" value={dados.descricao} onChange={handle} placeholder="Uma breve descrição da sua pizzaria..." rows={3} />
+              <textarea name="descricao" value={dados.descricao} onChange={handle} placeholder="Uma breve descrição..." rows={3} />
             </div>
             <div className="perfil-campo full">
               <label>URL do banner</label>
               <input name="banner" value={dados.banner} onChange={handle} placeholder="https://..." />
+              {dados.banner && <img src={dados.banner} alt="preview banner" className="perfil-img-preview" />}
             </div>
             <div className="perfil-campo full">
               <label>URL do logo</label>
               <input name="logo" value={dados.logo} onChange={handle} placeholder="https://..." />
+              {dados.logo && <img src={dados.logo} alt="preview logo" className="perfil-img-preview perfil-img-logo" />}
             </div>
           </div>
         </section>
@@ -173,7 +184,11 @@ export default function PerfilPizzaria() {
             </div>
             <div className="perfil-campo">
               <label>Estado</label>
-              <input name="endereco.estado" value={dados.endereco.estado} onChange={handle} placeholder="SP" maxLength={2} />
+              <input name="endereco.estado" value={dados.endereco.estado} onChange={handle} placeholder="SP" maxLength={2} style={{ textTransform: 'uppercase' }} />
+            </div>
+            <div className="perfil-campo">
+              <label>Complemento</label>
+              <input name="endereco.complemento" value={dados.endereco.complemento} onChange={handle} placeholder="Apto, sala..." />
             </div>
           </div>
         </section>
@@ -191,14 +206,33 @@ export default function PerfilPizzaria() {
               <input name="horarios.fechamento" type="time" value={dados.horarios.fechamento} onChange={handle} />
             </div>
           </div>
+          <div className="perfil-grid" style={{ marginTop: 12 }}>
+            <div className="perfil-campo">
+              <label>Tempo médio de entrega (min)</label>
+              <input
+                name="tempoMedioEntrega"
+                type="number"
+                min="10"
+                max="120"
+                value={dados.tempoMedioEntrega}
+                onChange={e => setDados(p => ({ ...p, tempoMedioEntrega: Number(e.target.value) }))}
+                placeholder="Ex: 40"
+              />
+            </div>
+            <div className="perfil-campo" style={{ justifyContent: 'flex-end', paddingBottom: 2 }}>
+              <span style={{ fontSize: '0.78rem', color: '#aaa', marginTop: 'auto' }}>
+                Exibido como "🕐 {dados.tempoMedioEntrega} min" no cardápio
+              </span>
+            </div>
+          </div>
         </section>
 
       </div>
 
-      {/* Botão salvar fixo no mobile */}
+      {/* Footer fixo mobile */}
       <div className="perfil-footer">
         <button className="perfil-btn-salvar-footer" onClick={salvar} disabled={salvando}>
-          {salvando ? '⏳ Salvando...' : sucesso ? '✓ Salvo com sucesso!' : '💾 Salvar alterações'}
+          {salvando ? '⏳ Salvando...' : sucesso ? '✓ Salvo!' : '💾 Salvar alterações'}
         </button>
       </div>
 

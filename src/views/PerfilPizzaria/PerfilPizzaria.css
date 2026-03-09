@@ -1,15 +1,15 @@
 .perfil-page {
   min-height: 100vh;
   background: #fafafa;
-  padding-bottom: 100px;
+  padding-bottom: 80px;
 }
 
 /* ── Header ── */
 .perfil-header {
   display: flex;
   align-items: center;
-  gap: 14px;
-  padding: 16px 24px;
+  gap: 12px;
+  padding: 14px 20px;
   background: #fff;
   border-bottom: 1px solid #f0f0f0;
   position: sticky;
@@ -18,12 +18,12 @@
 }
 
 .perfil-btn-voltar {
-  background: #f5f5f5;
-  border: none;
+  width: 36px;
+  height: 36px;
   border-radius: 50%;
-  width: 38px;
-  height: 38px;
-  font-size: 1.1rem;
+  border: none;
+  background: #f5f5f5;
+  font-size: 1rem;
   cursor: pointer;
   display: flex;
   align-items: center;
@@ -33,19 +33,22 @@
 }
 .perfil-btn-voltar:hover { background: #ebebeb; }
 
-.perfil-header-info { flex: 1; }
+.perfil-header-info { flex: 1; min-width: 0; }
 
 .perfil-titulo {
-  font-size: 1.1rem;
+  font-size: 1rem;
   font-weight: 800;
   color: #1a1a1a;
   margin: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .perfil-subtitulo {
-  font-size: 0.78rem;
+  font-size: 0.75rem;
   color: #aaa;
-  margin: 2px 0 0;
+  margin: 1px 0 0;
 }
 
 .perfil-btn-salvar {
@@ -53,76 +56,76 @@
   color: #fff;
   border: none;
   border-radius: 10px;
-  padding: 9px 20px;
-  font-size: 0.88rem;
+  padding: 8px 18px;
+  font-size: 0.85rem;
   font-weight: 700;
   cursor: pointer;
-  transition: background 0.15s;
   white-space: nowrap;
+  transition: background 0.15s;
+  flex-shrink: 0;
 }
 .perfil-btn-salvar:hover    { background: #c4331a; }
 .perfil-btn-salvar:disabled { opacity: 0.6; cursor: not-allowed; }
 
-/* ── Erro ── */
-.perfil-erro {
-  margin: 16px 24px 0;
-  background: #fef2f2;
-  border: 1px solid #fecaca;
-  color: #dc2626;
+/* ── Feedback ── */
+.perfil-feedback {
+  margin: 12px 16px 0;
   border-radius: 10px;
   padding: 10px 14px;
-  font-size: 0.85rem;
+  font-size: 0.84rem;
   font-weight: 600;
 }
+.perfil-feedback.erro { background: #fef2f2; border: 1px solid #fecaca; color: #dc2626; }
+.perfil-feedback.ok   { background: #f0fdf4; border: 1px solid #bbf7d0; color: #16a34a; }
 
 /* ── Layout ── */
 .perfil-layout {
-  max-width: 700px;
+  max-width: 680px;
   margin: 0 auto;
-  padding: 24px 16px;
+  padding: 20px 16px;
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: 14px;
 }
 
 /* ── Seção ── */
 .perfil-secao {
   background: #fff;
   border-radius: 16px;
-  padding: 20px;
+  padding: 18px 20px;
   border: 1px solid #f0f0f0;
 }
 
 .perfil-secao-titulo {
-  font-size: 0.78rem;
+  font-size: 0.72rem;
   font-weight: 800;
-  color: #aaa;
+  color: #bbb;
   text-transform: uppercase;
   letter-spacing: 0.6px;
-  margin-bottom: 16px;
+  margin-bottom: 14px;
 }
 
-/* ── Grid de campos ── */
+/* ── Grid ── */
 .perfil-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 12px;
 }
 
-.perfil-campo { display: flex; flex-direction: column; gap: 5px; }
+.perfil-campo { display: flex; flex-direction: column; gap: 4px; }
 .perfil-campo.full { grid-column: 1 / -1; }
 
 .perfil-campo label {
-  font-size: 0.75rem;
+  font-size: 0.72rem;
   font-weight: 700;
-  color: #666;
+  color: #888;
   text-transform: uppercase;
   letter-spacing: 0.3px;
 }
 
 .perfil-campo input,
 .perfil-campo textarea {
-  border: 1.5px solid #e8e8e8;
+  border: 1.5px solid #ebebeb;
   border-radius: 10px;
   padding: 10px 12px;
   font-size: 0.88rem;
@@ -130,8 +133,8 @@
   color: #1a1a1a;
   background: #fafafa;
   outline: none;
-  transition: border-color 0.15s, background 0.15s;
   resize: none;
+  transition: border-color 0.15s, background 0.15s;
 }
 
 .perfil-campo input:focus,
@@ -143,13 +146,28 @@
 .perfil-campo input::placeholder,
 .perfil-campo textarea::placeholder { color: #ccc; }
 
-/* ── Footer fixo ── */
+/* ── Preview imagem ── */
+.perfil-img-preview {
+  margin-top: 8px;
+  width: 100%;
+  max-height: 140px;
+  object-fit: cover;
+  border-radius: 10px;
+  border: 1px solid #f0f0f0;
+}
+
+.perfil-img-logo {
+  width: 80px;
+  height: 80px;
+  object-fit: cover;
+  border-radius: 50%;
+}
+
+/* ── Footer mobile ── */
 .perfil-footer {
   position: fixed;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  padding: 12px 16px;
+  bottom: 0; left: 0; right: 0;
+  padding: 10px 16px;
   background: #fff;
   border-top: 1px solid #f0f0f0;
   display: none;
@@ -179,23 +197,21 @@
   min-height: 60vh;
   gap: 12px;
   color: #aaa;
-  font-size: 0.9rem;
 }
 
 .perfil-spinner {
-  width: 32px;
-  height: 32px;
+  width: 30px;
+  height: 30px;
   border: 3px solid #f0f0f0;
   border-top-color: #e03c1f;
   border-radius: 50%;
-  animation: spin 0.8s linear infinite;
+  animation: perfilSpin 0.8s linear infinite;
 }
 
-@keyframes spin { to { transform: rotate(360deg); } }
+@keyframes perfilSpin { to { transform: rotate(360deg); } }
 
-/* ── Mobile ── */
 @media (max-width: 500px) {
-  .perfil-grid { grid-template-columns: 1fr; }
-  .perfil-footer { display: block; }
+  .perfil-grid    { grid-template-columns: 1fr; }
+  .perfil-footer  { display: block; }
   .perfil-btn-salvar { display: none; }
 }

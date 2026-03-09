@@ -7,13 +7,6 @@ import { useCarrinho } from '../Carrinho/useCarrinho.js';
 
 const API = import.meta.env.VITE_API_URL || 'http://localhost:3001/api';
 
-async function getPizzaria(id) {
-  const res = await fetch(`${API}/pizzarias/${id}`);
-  const data = await res.json();
-  if (!res.ok) throw new Error(data.erro || 'Erro ao buscar pizzaria');
-  return data;
-}
-
 function formatarPreco(valor) {
   return `R$ ${valor.toFixed(2).replace('.', ',')}`;
 }
@@ -36,23 +29,15 @@ function ProdutoCard({ produto, onEscolher }) {
       ) : (
         <div className="produto-img-placeholder">🍕</div>
       )}
-
       <div className="produto-body">
         <h3 className="produto-nome">{produto.nome}</h3>
         <p className="produto-descricao">{produto.descricao}</p>
-
         <div className="produto-footer">
           <div>
             <div className="produto-preco-label">A partir de</div>
-            <div className="produto-preco">
-              {formatarPreco(precoMinimo(produto.tamanhos))}
-            </div>
+            <div className="produto-preco">{formatarPreco(precoMinimo(produto.tamanhos))}</div>
           </div>
-
-          <button
-            className="btn-escolher"
-            onClick={() => onEscolher(produto)}
-          >
+          <button className="btn-escolher" onClick={() => onEscolher(produto)}>
             Escolher
           </button>
         </div>
@@ -65,56 +50,51 @@ export default function Cardapio() {
   const { pizzariaId } = useParams();
   const navigate = useNavigate();
 
-  const [pizzaria, setPizzaria]           = useState(null);
-  const [produtos, setProdutos]           = useState([]);
-  const [categorias, setCategorias]       = useState([]);
+  const [pizzaria, setPizzaria]             = useState(null);
+  const [produtos, setProdutos]             = useState([]);
+  const [categorias, setCategorias]         = useState([]);
   const [categoriaAtiva, setCategoriaAtiva] = useState('Todas');
-  const [busca, setBusca]                 = useState('');
-  const [loading, setLoading]             = useState(true);
-  const [erro, setErro]                   = useState(null);
-  const [modalProduto, setModalProduto]   = useState(null);
+  const [busca, setBusca]                   = useState('');
+  const [loading, setLoading]               = useState(true);
+  const [erro, setErro]                     = useState(null);
+  const [modalProduto, setModalProduto]     = useState(null);
   const [carrinhoAberto, setCarrinhoAberto] = useState(false);
 
-  const {
-    itens,
-    totalItens,
-    subtotal,
-    adicionarItem,
-    alterarQuantidade,
-    removerItem,
-  } = useCarrinho();
+  const { itens, totalItens, subtotal, adicionarItem, alterarQuantidade, removerItem } = useCarrinho();
 
-useEffect(() => {
-  async function carregar() {
-    try {
-      const pizzariaData = await getPizzaria(pizzariaId);
-      setPizzaria(pizzariaData);
-      document.title = pizzariaData.nome ? `${pizzariaData.nome} 🍕` : 'Cardápio';
+  useEffect(() => {
+    async function carregar() {
+      try {
+        const [resPizzaria, resProdutos] = await Promise.all([
+          fetch(`${API}/pizzarias/${pizzariaId}`),
+          fetch(`${API}/produtos?pizzariaId=${pizzariaId}`),
+        ]);
 
-      const res = await fetch(`${API}/produtos?pizzariaId=${pizzariaId}`);
-      const produtosData = await res.json();
-      if (!res.ok) throw new Error(produtosData.erro || 'Erro ao buscar produtos');
-      setProdutos(produtosData);
-      setCategorias(extrairCategorias(produtosData));
-    } catch (err) {
-      setErro(err.message);
-    } finally {
-      setLoading(false);
+        const pizzariaData = await resPizzaria.json();
+        if (!resPizzaria.ok) throw new Error(pizzariaData.erro || 'Pizzaria não encontrada');
+
+        const produtosData = await resProdutos.json();
+        if (!resProdutos.ok) throw new Error(produtosData.erro || 'Erro ao buscar produtos');
+
+        setPizzaria(pizzariaData);
+        document.title = pizzariaData.nome ? `${pizzariaData.nome} 🍕` : 'Cardápio';
+        setProdutos(produtosData);
+        setCategorias(extrairCategorias(produtosData));
+      } catch (err) {
+        setErro(err.message);
+      } finally {
+        setLoading(false);
+      }
     }
-  }
-  carregar();
-}, [pizzariaId]);
+    carregar();
+  }, [pizzariaId]);
 
   const produtosFiltrados = useMemo(() => {
     return produtos.filter((p) => {
-      const porCategoria =
-        categoriaAtiva === 'Todas' || p.categorias?.includes(categoriaAtiva);
-
-      const porBusca =
-        busca.trim() === '' ||
+      const porCategoria = categoriaAtiva === 'Todas' || p.categorias?.includes(categoriaAtiva);
+      const porBusca = busca.trim() === '' ||
         p.nome.toLowerCase().includes(busca.toLowerCase()) ||
         p.descricao?.toLowerCase().includes(busca.toLowerCase());
-
       return porCategoria && porBusca;
     });
   }, [produtos, categoriaAtiva, busca]);
@@ -124,10 +104,6 @@ useEffect(() => {
     return produtos.filter((p) => p.categorias?.includes(cat)).length;
   }
 
-  function handleEscolher(produto) {
-    setModalProduto(produto);
-  }
-
   function handleAdicionarAoPedido(item) {
     adicionarItem(item);
     setCarrinhoAberto(true);
@@ -135,10 +111,13 @@ useEffect(() => {
 
   function handleFinalizarPedido() {
     setCarrinhoAberto(false);
-    navigate(`/checkout/${pizzariaId}`, {
-      state: { itens, subtotal },
-    });
+    navigate(`/checkout/${pizzariaId}`, { state: { itens, subtotal } });
   }
+
+  const endereco = pizzaria?.endereco;
+  const enderecoTexto = endereco?.rua
+    ? `${endereco.rua}, ${endereco.numero} - ${endereco.bairro}`
+    : null;
 
   const abas = ['Todas', ...categorias];
 
@@ -149,31 +128,26 @@ useEffect(() => {
       <div className="banner">
         <img
           className="banner-img"
-          src={
-            pizzaria?.banner ||
-            'https://images.unsplash.com/photo-1513104890138-7c749659a591?w=1400&q=80'
-          }
+          src={pizzaria?.banner || 'https://images.unsplash.com/photo-1513104890138-7c749659a591?w=1400&q=80'}
           alt="Banner da pizzaria"
         />
-
         <div className="banner-overlay">
           <div className="banner-inner">
-            <h1 className="banner-nome">
-              {pizzaria?.nome || 'Pizzaria'}
-            </h1>
-
-            <p className="banner-slogan">
-              Sabores autênticos da Itália
-            </p>
-
+            <h1 className="banner-nome">{pizzaria?.nome || 'Pizzaria'}</h1>
+            {pizzaria?.descricao && (
+              <p className="banner-slogan">{pizzaria.descricao}</p>
+            )}
             <div className="banner-infos">
               <span className="banner-info">⭐ 4.8</span>
-              <span className="banner-info">🕐 30-40 min</span>
-              <span className="banner-info">
-                📍 {pizzaria?.endereco?.rua},{' '}
-                {pizzaria?.endereco?.numero} -{' '}
-                {pizzaria?.endereco?.bairro}
-              </span>
+              <span className="banner-info">🕐 {pizzaria?.tempoMedioEntrega || 40} min</span>
+              {enderecoTexto && (
+                <span className="banner-info">📍 {enderecoTexto}</span>
+              )}
+              {pizzaria?.horarios?.abertura && (
+                <span className="banner-info">
+                  🕒 {pizzaria.horarios.abertura} – {pizzaria.horarios.fechamento}
+                </span>
+              )}
             </div>
           </div>
         </div>
@@ -201,9 +175,7 @@ useEffect(() => {
           {abas.map((cat) => (
             <button
               key={cat}
-              className={`categoria-tab ${
-                categoriaAtiva === cat ? 'ativa' : ''
-              }`}
+              className={`categoria-tab ${categoriaAtiva === cat ? 'ativa' : ''}`}
               onClick={() => setCategoriaAtiva(cat)}
             >
               {cat} ({contarCategoria(cat)})
@@ -215,34 +187,19 @@ useEffect(() => {
       {/* Produtos */}
       <div className="cardapio-container">
         <div className="produtos-grid">
-
           {loading && (
             <div className="estado-loading">
               <div className="spinner" />
               <p>Carregando cardápio...</p>
             </div>
           )}
-
-          {erro && (
-            <div className="estado-vazio">
-              <p>⚠️ Erro: {erro}</p>
-            </div>
-          )}
-
+          {erro && <div className="estado-vazio"><p>⚠️ Erro: {erro}</p></div>}
           {!loading && !erro && produtosFiltrados.length === 0 && (
-            <div className="estado-vazio">
-              <p>🍕 Nenhuma pizza encontrada.</p>
-            </div>
+            <div className="estado-vazio"><p>🍕 Nenhuma pizza encontrada.</p></div>
           )}
-
-          {!loading && !erro &&
-            produtosFiltrados.map((p) => (
-              <ProdutoCard
-                key={p._id}
-                produto={p}
-                onEscolher={handleEscolher}
-              />
-            ))}
+          {!loading && !erro && produtosFiltrados.map((p) => (
+            <ProdutoCard key={p._id} produto={p} onEscolher={setModalProduto} />
+          ))}
         </div>
       </div>
 
@@ -255,13 +212,8 @@ useEffect(() => {
         />
       )}
 
-      {/* Botão flutuante do carrinho */}
-      <CarrinhoFAB
-        totalItens={totalItens}
-        onClick={() => setCarrinhoAberto(true)}
-      />
+      <CarrinhoFAB totalItens={totalItens} onClick={() => setCarrinhoAberto(true)} />
 
-      {/* Drawer do carrinho */}
       {carrinhoAberto && (
         <Carrinho
           itens={itens}
