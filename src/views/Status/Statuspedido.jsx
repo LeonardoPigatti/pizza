@@ -1,6 +1,8 @@
 import { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import './StatusPedido.css';
+import Chat from '../Chat/Chat.jsx';
+import { useChat } from '../Chat/useChat.js';
 
 const API = import.meta.env.VITE_API_URL || 'http://localhost:3001/api';
 
@@ -11,9 +13,9 @@ function formatarPreco(valor) {
 // Ordem e descrição de cada status
 const STATUS_STEPS = [
   {
-    key:    'Aguardando confirmação',
+    key:    'Aguardando confirmacao',
     icone:  '⏳',
-    titulo: 'Aguardando confirmação',
+    titulo: 'Aguardando confirmacao',
     desc:   'O restaurante vai confirmar seu pedido em breve',
   },
   {
@@ -38,9 +40,9 @@ const STATUS_STEPS = [
 
 const STATUS_STEPS_RETIRADA = [
   {
-    key:    'Aguardando confirmação',
+    key:    'Aguardando confirmacao',
     icone:  '⏳',
-    titulo: 'Aguardando confirmação',
+    titulo: 'Aguardando confirmacao',
     desc:   'O restaurante vai confirmar seu pedido em breve',
   },
   {
@@ -64,7 +66,7 @@ const STATUS_STEPS_RETIRADA = [
 ];
 
 function indiceStatus(statusAtual) {
-  const ordem = ['Aguardando confirmação', 'Preparando', 'Saiu para entrega', 'Concluido'];
+  const ordem = ['Aguardando confirmacao', 'Preparando', 'Saiu para entrega', 'Concluido'];
   return ordem.indexOf(statusAtual);
 }
 
@@ -100,6 +102,7 @@ export default function StatusPedido() {
   const [loading, setLoading] = useState(true);
   const [erro, setErro]       = useState(null);
 
+  const chat = useChat(pedidoId, 'cliente');
   const tempo = pedido?.tempoEsperaEstimado ?? 40;
   const { display: timerDisplay, encerrado } = useCronometro(tempo);
 
@@ -275,6 +278,23 @@ export default function StatusPedido() {
               </div>
             </div>
           ))}
+        </div>
+
+        {/* Chat */}
+        <div className="status-card" style={{ padding: 0, overflow: 'hidden' }}>
+          <div style={{ padding: '16px 20px 12px', borderBottom: '1px solid #f0f0f0' }}>
+            <div className="status-resumo-titulo" style={{ marginBottom: 0 }}>
+              💬 Falar com a pizzaria
+            </div>
+          </div>
+          <Chat
+            mensagens={chat.mensagens}
+            texto={chat.texto}
+            setTexto={chat.setTexto}
+            enviar={chat.enviar}
+            handleKeyDown={chat.handleKeyDown}
+            autorLocal="cliente"
+          />
         </div>
 
         {/* Botão WhatsApp */}

@@ -1,6 +1,8 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import './Dashboard.css';
+import Chat from '../Chat/Chat.jsx';
+import { useChat } from '../Chat/useChat.js';
 
 const API = import.meta.env.VITE_API_URL || 'http://localhost:3001/api';
 
@@ -27,23 +29,22 @@ function calcularTotalPedido(pedido) {
 }
 
 const FILTROS = [
-  { label: 'Todos',                   valor: 'todos' },
-  { label: '⏳ Aguardando',           valor: 'Aguardando confirmação' },
-  { label: '👨‍🍳 Preparando',          valor: 'Preparando' },
-  { label: '🛵 Saiu para entrega',    valor: 'Saiu para entrega' },
-  { label: '✅ Concluido',            valor: 'Concluido' },
+  { label: 'Todos',                valor: 'todos' },
+  { label: 'Aguardando',           valor: 'Aguardando confirmacao' },
+  { label: 'Preparando',           valor: 'Preparando' },
+  { label: 'Saiu para entrega',    valor: 'Saiu para entrega' },
+  { label: 'Concluido',            valor: 'Concluido' },
 ];
 
-// Próximo status na sequência
 const PROXIMO_STATUS = {
-  'Aguardando confirmação': { label: '👨‍🍳 Confirmar e Preparar', valor: 'Preparando' },
-  'Preparando':             { label: '🛵 Saiu para Entrega',      valor: 'Saiu para entrega' },
-  'Saiu para entrega':      { label: '✅ Marcar como Concluido',  valor: 'Concluido' },
+  'Aguardando confirmacao': { label: 'Confirmar e Preparar', valor: 'Preparando' },
+  'Preparando':             { label: 'Saiu para Entrega',    valor: 'Saiu para entrega' },
+  'Saiu para entrega':      { label: 'Marcar como Concluido', valor: 'Concluido' },
   'Concluido':              null,
 };
 
 function statusClass(status) {
-  if (status === 'Aguardando confirmação') return 'aguardando';
+  if (status === 'Aguardando confirmacao') return 'aguardando';
   if (status === 'Preparando')             return 'preparando';
   if (status === 'Saiu para entrega')      return 'saiu';
   if (status === 'Concluido')              return 'concluido';
@@ -54,24 +55,22 @@ export default function Dashboard() {
   const { pizzariaId } = useParams();
   const navigate       = useNavigate();
 
-  const [pedidos, setPedidos]   = useState([]);
-  const [loading, setLoading]   = useState(true);
-  const [erro, setErro]         = useState(null);
-  const [filtro, setFiltro]     = useState('todos');
-  const [usuario, setUsuario]   = useState(null);
+  const [pedidos, setPedidos]               = useState([]);
+  const [loading, setLoading]               = useState(true);
+  const [erro, setErro]                     = useState(null);
+  const [filtro, setFiltro]                 = useState('todos');
+  const [usuario, setUsuario]               = useState(null);
+  const [chatPedidoId, setChatPedidoId]     = useState(null);
 
-  // Verifica autenticação
+  const chat = useChat(chatPedidoId, 'pizzaria');
+
   useEffect(() => {
     const token = localStorage.getItem('token');
     const user  = localStorage.getItem('usuario');
-    if (!token || !user) {
-      navigate('/login');
-      return;
-    }
+    if (!token || !user) { navigate('/login'); return; }
     setUsuario(JSON.parse(user));
   }, []);
 
-  // Busca pedidos
   useEffect(() => {
     async function buscar() {
       const token = localStorage.getItem('token');
@@ -82,7 +81,6 @@ export default function Dashboard() {
         const data = await res.json();
         if (res.status === 401) { navigate('/login'); return; }
         if (!res.ok) throw new Error(data.erro);
-        // Ordena do mais recente para o mais antigo
         setPedidos(data.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt)));
       } catch (err) {
         setErro(err.message);
@@ -98,13 +96,12 @@ export default function Dashboard() {
     return pedidos.filter(p => p.statusPedido === filtro);
   }, [pedidos, filtro]);
 
-  // Resumo
   const totalHoje = useMemo(() => {
     const hoje = new Date().toDateString();
     return pedidos.filter(p => new Date(p.createdAt).toDateString() === hoje);
   }, [pedidos]);
 
-  const emAndamento = pedidos.filter(p => p.statusPedido !== 'Pronto').length;
+  const emAndamento   = pedidos.filter(p => p.statusPedido !== 'Concluido').length;
   const faturamentoHoje = totalHoje.reduce((s, p) => s + calcularTotalPedido(p), 0);
 
   async function atualizarStatus(pedidoId, novoStatus) {
@@ -121,6 +118,10 @@ export default function Dashboard() {
     } catch (err) {
       alert('Erro ao atualizar status: ' + err.message);
     }
+  }
+
+  function toggleChat(pedidoId) {
+    setChatPedidoId(prev => prev === pedidoId ? null : pedidoId);
   }
 
   function sair() {
@@ -141,7 +142,7 @@ export default function Dashboard() {
             <div className="dashboard-subtitulo">{usuario?.nome}</div>
           </div>
         </div>
-        <button className="btn-sair" onClick={sair}>Sair →</button>
+        <button className="btn-sair" onClick={sair}>Sair</button>
       </div>
 
       <div className="dashboard-layout">
@@ -189,48 +190,40 @@ export default function Dashboard() {
           ))}
         </div>
 
-        {/* Lista */}
+        {/* Estados */}
         {loading && (
           <div className="dashboard-loading">
             <div className="dashboard-spinner" />
             <p>Carregando pedidos...</p>
           </div>
         )}
-
-        {erro && (
-          <div className="dashboard-vazio">⚠️ {erro}</div>
-        )}
-
+        {erro && <div className="dashboard-vazio">⚠️ {erro}</div>}
         {!loading && !erro && pedidosFiltrados.length === 0 && (
-          <div className="dashboard-vazio">
-            Nenhum pedido encontrado.
-          </div>
+          <div className="dashboard-vazio">Nenhum pedido encontrado.</div>
         )}
 
+        {/* Lista de pedidos */}
         <div className="pedidos-lista">
           {!loading && !erro && pedidosFiltrados.map(pedido => (
             <div key={pedido._id} className="pedido-card">
 
+              {/* Header do card */}
               <div className="pedido-card-header">
                 <div className="pedido-card-header-esquerda">
                   <div>
-                    <div className="pedido-numero">
-                      #{pedido._id.toString().slice(-5).toUpperCase()}
-                    </div>
-                    <div className="pedido-hora">
-                      {formatarData(pedido.createdAt)} às {formatarHora(pedido.createdAt)}
-                    </div>
+                    <div className="pedido-numero">#{pedido._id.toString().slice(-5).toUpperCase()}</div>
+                    <div className="pedido-hora">{formatarData(pedido.createdAt)} às {formatarHora(pedido.createdAt)}</div>
                   </div>
                   <span className="pedido-badge-entrega">
                     {pedido.tipoEntrega === 'Entrega' ? '🛵 Entrega' : '🏪 Retirada'}
                   </span>
                 </div>
-
                 <span className={`pedido-status-badge ${statusClass(pedido.statusPedido)}`}>
                   {pedido.statusPedido}
                 </span>
               </div>
 
+              {/* Body do card */}
               <div className="pedido-card-body">
                 <div className="pedido-itens">
                   {pedido.pizzas.map((pizza, i) => (
@@ -260,16 +253,40 @@ export default function Dashboard() {
                   <div style={{ fontSize: '0.75rem', color: '#aaa' }}>
                     💳 {pedido.pagamento}
                   </div>
-                  {PROXIMO_STATUS[pedido.statusPedido] && (
+
+                  {/* Botões de ação */}
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 6, marginTop: 4 }}>
+                    {PROXIMO_STATUS[pedido.statusPedido] && (
+                      <button
+                        className="btn-proximo-status"
+                        onClick={() => atualizarStatus(pedido._id, PROXIMO_STATUS[pedido.statusPedido].valor)}
+                      >
+                        {PROXIMO_STATUS[pedido.statusPedido].label}
+                      </button>
+                    )}
                     <button
-                      className="btn-proximo-status"
-                      onClick={() => atualizarStatus(pedido._id, PROXIMO_STATUS[pedido.statusPedido].valor)}
+                      className="btn-chat"
+                      onClick={() => toggleChat(pedido._id)}
                     >
-                      {PROXIMO_STATUS[pedido.statusPedido].label}
+                      {chatPedidoId === pedido._id ? '✕ Fechar chat' : '💬 Chat com cliente'}
                     </button>
-                  )}
+                  </div>
                 </div>
               </div>
+
+              {/* Chat inline */}
+              {chatPedidoId === pedido._id && (
+                <div style={{ borderTop: '1px solid #f0f0f0' }}>
+                  <Chat
+                    mensagens={chat.mensagens}
+                    texto={chat.texto}
+                    setTexto={chat.setTexto}
+                    enviar={chat.enviar}
+                    handleKeyDown={chat.handleKeyDown}
+                    autorLocal="pizzaria"
+                  />
+                </div>
+              )}
 
             </div>
           ))}

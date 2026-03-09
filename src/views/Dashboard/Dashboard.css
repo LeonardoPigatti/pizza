@@ -302,3 +302,20 @@
   background: #e03c1f;
   transform: translateY(-1px);
 }
+
+/* ── Botão chat ── */
+.btn-chat {
+  background: #f0f0f0;
+  color: #555;
+  border: none;
+  border-radius: 8px;
+  padding: 8px 14px;
+  font-size: 0.78rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.15s;
+  white-space: nowrap;
+  margin-top: 4px;
+}
+
+.btn-chat:hover { background: #e8e8e8; color: #1a1a1a; }
