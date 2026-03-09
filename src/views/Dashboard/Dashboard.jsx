@@ -33,12 +33,18 @@ const TODOS_STATUS = [
   { valor: 'Concluido',              label: 'Concluido' },
 ];
 
-const FILTROS = [
+const FILTROS_ADMIN = [
   { label: 'Todos',               valor: 'todos' },
   { label: 'Aguardando',          valor: 'Aguardando confirmacao' },
   { label: 'Preparando',          valor: 'Preparando' },
   { label: 'Saiu para entrega',   valor: 'Saiu para entrega' },
   { label: 'Concluido',           valor: 'Concluido' },
+];
+
+const FILTROS_MOTOBOY = [
+  { label: '⏳ Aguardando retirada', valor: 'aguardando-retirada' },
+  { label: '🛵 Em entrega',          valor: 'em-entrega' },
+  { label: '✅ Concluido',           valor: 'Concluido' },
 ];
 
 const PROXIMO_STATUS = {
@@ -112,7 +118,10 @@ export default function Dashboard() {
   const [modalRetrocesso, setModalRetrocesso] = useState(null); // { pedido, novoStatus }
 
   const perfil = usuario?.perfil || 'admin';
-  const chat   = useChat(chatPedidoId, 'pizzaria');
+  const autorLabel = perfil === 'motoboy'
+    ? '🛵 Motoboy'
+    : '🍕 Pizzaria';
+  const chat = useChat(chatPedidoId, 'pizzaria', autorLabel, perfil);
 
   useEffect(() => {
     const token = localStorage.getItem('token');
@@ -120,6 +129,7 @@ export default function Dashboard() {
     if (!token || !user) { navigate('/login'); return; }
     const u = JSON.parse(user);
     setUsuario(u);
+    if (u.perfil === 'motoboy') setFiltro('aguardando-retirada');
   }, []);
 
   useEffect(() => {
@@ -144,6 +154,10 @@ export default function Dashboard() {
 
   const pedidosFiltrados = useMemo(() => {
     if (filtro === 'todos') return pedidos;
+    if (filtro === 'aguardando-retirada')
+      return pedidos.filter(p => p.statusPedido === 'Saiu para entrega' && !p.motoboyPegou);
+    if (filtro === 'em-entrega')
+      return pedidos.filter(p => p.statusPedido === 'Saiu para entrega' && p.motoboyPegou);
     return pedidos.filter(p => p.statusPedido === filtro);
   }, [pedidos, filtro]);
 
@@ -188,6 +202,21 @@ export default function Dashboard() {
     setModalRetrocesso(null);
   }
 
+  async function pegarPizza(pedidoId) {
+    const token = localStorage.getItem('token');
+    try {
+      const res  = await fetch(`${API}/pedidos/${pedidoId}/pegar`, {
+        method:  'PATCH',
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.erro);
+      setPedidos(prev => prev.map(p => p._id === pedidoId ? data : p));
+    } catch (err) {
+      alert('Erro: ' + err.message);
+    }
+  }
+
   function toggleChat(pedidoId) {
     setChatPedidoId(prev => prev === pedidoId ? null : pedidoId);
   }
@@ -215,8 +244,8 @@ export default function Dashboard() {
 
       <div className="dashboard-layout">
 
-        {/* Resumo */}
-        <div className="dashboard-resumo">
+        {/* Resumo — só admin */}
+        {perfil === 'admin' && <div className="dashboard-resumo">
           <div className="resumo-card">
             <span className="resumo-card-icone">📋</span>
             <div>
@@ -238,24 +267,31 @@ export default function Dashboard() {
               <div className="resumo-card-valor verde">{formatarPreco(faturamentoHoje)}</div>
             </div>
           </div>
-        </div>
+        </div>}
 
         {/* Filtros */}
         <div className="dashboard-filtros">
-          {FILTROS.map(f => (
-            <button
-              key={f.valor}
-              className={`filtro-btn ${filtro === f.valor ? 'ativo' : ''}`}
-              onClick={() => setFiltro(f.valor)}
-            >
-              {f.label}
-              {f.valor !== 'todos' && (
-                <span style={{ marginLeft: 6, opacity: 0.7 }}>
-                  ({pedidos.filter(p => p.statusPedido === f.valor).length})
-                </span>
-              )}
-            </button>
-          ))}
+          {(perfil === 'motoboy' ? FILTROS_MOTOBOY : FILTROS_ADMIN).map(f => {
+            const count = f.valor === 'aguardando-retirada'
+              ? pedidos.filter(p => p.statusPedido === 'Saiu para entrega' && !p.motoboyPegou).length
+              : f.valor === 'em-entrega'
+                ? pedidos.filter(p => p.statusPedido === 'Saiu para entrega' && p.motoboyPegou).length
+                : f.valor !== 'todos'
+                  ? pedidos.filter(p => p.statusPedido === f.valor).length
+                  : null;
+            return (
+              <button
+                key={f.valor}
+                className={`filtro-btn ${filtro === f.valor ? 'ativo' : ''}`}
+                onClick={() => setFiltro(f.valor)}
+              >
+                {f.label}
+                {count !== null && (
+                  <span style={{ marginLeft: 6, opacity: 0.7 }}>({count})</span>
+                )}
+              </button>
+            );
+          })}
         </div>
 
         {loading && <div className="dashboard-loading"><div className="dashboard-spinner" /><p>Carregando pedidos...</p></div>}
@@ -278,9 +314,14 @@ export default function Dashboard() {
                     {pedido.tipoEntrega === 'Entrega' ? '🛵 Entrega' : '🏪 Retirada'}
                   </span>
                 </div>
-                <span className={`pedido-status-badge ${statusClass(pedido.statusPedido)}`}>
-                  {pedido.statusPedido}
-                </span>
+                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 6 }}>
+                  <span className={`pedido-status-badge ${statusClass(pedido.statusPedido)}`}>
+                    {pedido.statusPedido}
+                  </span>
+                  {perfil === 'motoboy' && pedido.statusPedido === 'Saiu para entrega' && !pedido.motoboyPegou && (
+                    <span className="badge-aguardando-retirada">⏳ Aguardando retirada</span>
+                  )}
+                </div>
               </div>
 
               {/* Body */}
@@ -314,22 +355,28 @@ export default function Dashboard() {
                     💳 {pedido.pagamento}
                   </div>
 
-                  {/* Motoboy: só pode concluir pedidos em entrega + chat quando em entrega */}
+                  {/* Motoboy: fluxo retirada → entrega */}
                   {perfil === 'motoboy' ? (
                     pedido.statusPedido === 'Saiu para entrega' ? (
                       <>
-                        <button
-                          className="btn-proximo-status"
-                          onClick={() => atualizarStatus(pedido._id, 'Concluido')}
-                        >
-                          Confirmar Entrega
-                        </button>
-                        <button
-                          className="btn-chat"
-                          onClick={() => toggleChat(pedido._id)}
-                        >
-                          {chatPedidoId === pedido._id ? '✕ Fechar chat' : '💬 Chat com cliente'}
-                        </button>
+                        {!pedido.motoboyPegou ? (
+                          <button className="btn-pegou" onClick={() => pegarPizza(pedido._id)}>
+                            🍕 Peguei a pizza
+                          </button>
+                        ) : (
+                          <>
+                            <span className="badge-pegou">✓ Pizza retirada</span>
+                            <button
+                              className="btn-proximo-status"
+                              onClick={() => atualizarStatus(pedido._id, 'Concluido')}
+                            >
+                              Confirmar Entrega
+                            </button>
+                            <button className="btn-chat" onClick={() => toggleChat(pedido._id)}>
+                              {chatPedidoId === pedido._id ? '✕ Fechar chat' : '💬 Chat com cliente'}
+                            </button>
+                          </>
+                        )}
                       </>
                     ) : (
                       <span style={{ fontSize: '0.75rem', color: '#bbb', fontStyle: 'italic' }}>

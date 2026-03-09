@@ -507,3 +507,85 @@
 
 .btn-confirmar-retrocesso:hover    { background: #9a3412; }
 .btn-confirmar-retrocesso:disabled { opacity: 0.4; cursor: not-allowed; }
+
+/* ── Alerta motoboy ── */
+.motoboy-alerta {
+  background: linear-gradient(135deg, #fff7ed, #ffedd5);
+  border: 2px solid #fb923c;
+  border-radius: 14px;
+  padding: 16px 20px;
+  margin-bottom: 20px;
+  animation: fadeIn 0.3s ease;
+}
+
+.motoboy-alerta-titulo {
+  font-size: 1rem;
+  font-weight: 800;
+  color: #c2410c;
+  margin-bottom: 12px;
+}
+
+.motoboy-alerta-lista {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.motoboy-alerta-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  background: #fff;
+  border-radius: 10px;
+  padding: 10px 14px;
+  font-size: 0.85rem;
+  color: #444;
+  flex-wrap: wrap;
+}
+
+/* ── Botão peguei a pizza ── */
+.btn-pegou {
+  background: #f97316;
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  padding: 9px 14px;
+  font-size: 0.82rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 0.15s, transform 0.1s;
+  white-space: nowrap;
+}
+
+.btn-pegou:hover  { background: #ea580c; }
+.btn-pegou:active { transform: scale(0.97); }
+
+/* ── Badge pizza retirada ── */
+.badge-pegou {
+  display: inline-block;
+  background: #dcfce7;
+  color: #16a34a;
+  border-radius: 6px;
+  padding: 4px 10px;
+  font-size: 0.75rem;
+  font-weight: 700;
+}
+
+/* ── Badge aguardando retirada (motoboy) ── */
+.badge-aguardando-retirada {
+  display: inline-block;
+  background: #fff7ed;
+  color: #c2410c;
+  border: 1.5px solid #fb923c;
+  border-radius: 6px;
+  padding: 3px 10px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  animation: pulso 1.5s ease-in-out infinite;
+}
+
+@keyframes pulso {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0.55; }
+}

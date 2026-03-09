@@ -61,6 +61,7 @@ const PedidoSchema = new mongoose.Schema({
   },
   tempoEsperaEstimado: { type: Number, default: 40 },
   historicoStatus:     { type: [HistoricoStatusSchema], default: [] },
+  motoboyPegou:        { type: Boolean, default: false },
 }, { timestamps: true });
 
 module.exports = mongoose.model('Pedido', PedidoSchema);

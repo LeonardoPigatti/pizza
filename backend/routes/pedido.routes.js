@@ -78,4 +78,19 @@ router.patch('/:id/status', async (req, res) => {
   }
 });
 
+// PATCH /api/pedidos/:id/pegar — motoboy confirma que pegou a pizza
+router.patch('/:id/pegar', async (req, res) => {
+  try {
+    const pedido = await Pedido.findByIdAndUpdate(
+      req.params.id,
+      { motoboyPegou: true },
+      { new: true, runValidators: false }
+    ).populate('pizzas.produtoId');
+    if (!pedido) return res.status(404).json({ erro: 'Pedido não encontrado' });
+    res.json(pedido);
+  } catch (err) {
+    res.status(400).json({ erro: err.message });
+  }
+});
+
 module.exports = router;
