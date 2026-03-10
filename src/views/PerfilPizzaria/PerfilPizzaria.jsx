@@ -15,11 +15,13 @@ export default function PerfilPizzaria() {
   const { pizzariaId } = useParams();
   const navigate       = useNavigate();
 
-  const [dados, setDados]       = useState(VAZIO);
-  const [loading, setLoading]   = useState(true);
-  const [salvando, setSalvando] = useState(false);
-  const [sucesso, setSucesso]   = useState(false);
-  const [erro, setErro]         = useState(null);
+  const [dados, setDados]         = useState(VAZIO);
+  const [loading, setLoading]     = useState(true);
+  const [salvando, setSalvando]   = useState(false);
+  const [sucesso, setSucesso]     = useState(false);
+  const [erro, setErro]           = useState(null);
+  const [buscandoCep, setBuscandoCep] = useState(false);
+  const [erroCep, setErroCep]     = useState(null);
 
   useEffect(() => {
     const token = localStorage.getItem('token');
@@ -68,6 +70,36 @@ export default function PerfilPizzaria() {
     }
   }
 
+  async function handleCep(e) {
+    const cep = e.target.value.replace(/\D/g, '');
+    setDados(p => ({ ...p, endereco: { ...p.endereco, cep: e.target.value } }));
+    setErroCep(null);
+
+    if (cep.length !== 8) return;
+
+    setBuscandoCep(true);
+    try {
+      const res  = await fetch(`https://viacep.com.br/ws/${cep}/json/`);
+      const data = await res.json();
+      if (data.erro) { setErroCep('CEP não encontrado'); return; }
+      setDados(p => ({
+        ...p,
+        endereco: {
+          ...p.endereco,
+          cep:    e.target.value,
+          rua:    data.logradouro || '',
+          bairro: data.bairro     || '',
+          cidade: data.localidade || '',
+          estado: data.uf         || '',
+        },
+      }));
+    } catch {
+      setErroCep('Erro ao buscar CEP');
+    } finally {
+      setBuscandoCep(false);
+    }
+  }
+
   async function salvar() {
     setSalvando(true);
     setSucesso(false);
@@ -100,7 +132,6 @@ export default function PerfilPizzaria() {
   return (
     <div className="perfil-page">
 
-      {/* Header */}
       <div className="perfil-header">
         <button className="perfil-btn-voltar" onClick={() => navigate(-1)}>←</button>
         <div className="perfil-header-info">
@@ -112,13 +143,11 @@ export default function PerfilPizzaria() {
         </button>
       </div>
 
-      {/* Feedback */}
       {erro    && <div className="perfil-feedback erro">⚠️ {erro}</div>}
       {sucesso && <div className="perfil-feedback ok">✓ Alterações salvas com sucesso!</div>}
 
       <div className="perfil-layout">
 
-        {/* Identidade */}
         <section className="perfil-secao">
           <div className="perfil-secao-titulo">🍕 Identidade</div>
           <div className="perfil-grid">
@@ -143,7 +172,6 @@ export default function PerfilPizzaria() {
           </div>
         </section>
 
-        {/* Contato */}
         <section className="perfil-secao">
           <div className="perfil-secao-titulo">📞 Contato</div>
           <div className="perfil-grid">
@@ -158,14 +186,26 @@ export default function PerfilPizzaria() {
           </div>
         </section>
 
-        {/* Endereço */}
         <section className="perfil-secao">
           <div className="perfil-secao-titulo">📍 Endereço</div>
           <div className="perfil-grid">
+
+            {/* CEP com busca automática */}
             <div className="perfil-campo">
-              <label>CEP</label>
-              <input name="endereco.cep" value={dados.endereco.cep} onChange={handle} placeholder="00000-000" />
+              <label>
+                CEP
+                {buscandoCep && <span className="perfil-cep-status"> 🔍 Buscando...</span>}
+                {erroCep     && <span className="perfil-cep-status erro"> ⚠️ {erroCep}</span>}
+              </label>
+              <input
+                name="endereco.cep"
+                value={dados.endereco.cep}
+                onChange={handleCep}
+                placeholder="00000-000"
+                maxLength={9}
+              />
             </div>
+
             <div className="perfil-campo">
               <label>Número</label>
               <input name="endereco.numero" value={dados.endereco.numero} onChange={handle} placeholder="123" />
@@ -193,7 +233,6 @@ export default function PerfilPizzaria() {
           </div>
         </section>
 
-        {/* Horários */}
         <section className="perfil-secao">
           <div className="perfil-secao-titulo">🕐 Horário de funcionamento</div>
           <div className="perfil-grid">
@@ -211,9 +250,7 @@ export default function PerfilPizzaria() {
               <label>Tempo médio de entrega (min)</label>
               <input
                 name="tempoMedioEntrega"
-                type="number"
-                min="10"
-                max="120"
+                type="number" min="10" max="120"
                 value={dados.tempoMedioEntrega}
                 onChange={e => setDados(p => ({ ...p, tempoMedioEntrega: Number(e.target.value) }))}
                 placeholder="Ex: 40"
@@ -229,7 +266,6 @@ export default function PerfilPizzaria() {
 
       </div>
 
-      {/* Footer fixo mobile */}
       <div className="perfil-footer">
         <button className="perfil-btn-salvar-footer" onClick={salvar} disabled={salvando}>
           {salvando ? '⏳ Salvando...' : sucesso ? '✓ Salvo!' : '💾 Salvar alterações'}
