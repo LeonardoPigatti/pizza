@@ -19,7 +19,32 @@ function formatarPreco(valor) {
   return `R$ ${Number(valor).toFixed(2).replace('.', ',')}`;
 }
 
-// ── Modal ──
+// ── Modal de confirmação de exclusão ──
+function ModalConfirmarExclusao({ produto, onConfirmar, onCancelar }) {
+  return (
+    <div className="ca-modal-overlay" onClick={onCancelar}>
+      <div className="ca-modal ca-modal-sm" onClick={e => e.stopPropagation()}>
+        <div className="ca-modal-header">
+          <span>🗑️ Excluir produto</span>
+          <button onClick={onCancelar}>✕</button>
+        </div>
+        <div className="ca-modal-body" style={{ textAlign: 'center', padding: '28px 24px 16px' }}>
+          <div style={{ fontSize: '2.5rem', marginBottom: 12 }}>⚠️</div>
+          <p style={{ fontWeight: 700, fontSize: '1rem', color: '#222', marginBottom: 6 }}>
+            Excluir <span style={{ color: '#e03c1f' }}>{produto.nome}</span>?
+          </p>
+          <p style={{ fontSize: '0.82rem', color: '#999' }}>Essa ação não pode ser desfeita.</p>
+        </div>
+        <div className="ca-modal-footer">
+          <button className="ca-btn-cancelar" onClick={onCancelar}>Cancelar</button>
+          <button className="ca-btn-deletar-confirmar" onClick={onConfirmar}>Excluir</button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ── Modal de edição / criação ──
 function ModalProduto({ produto, pizzariaId, onSalvar, onFechar }) {
   const editando = !!produto._id;
   const [dados, setDados]       = useState({ ...PRODUTO_VAZIO, ...produto });
@@ -43,7 +68,6 @@ function ModalProduto({ produto, pizzariaId, onSalvar, onFechar }) {
     }));
   }
 
-  // Subcategorias
   function addSubcat() {
     const val = subcatInput.trim();
     if (!val || dados.subcategorias.includes(val)) return;
@@ -54,7 +78,6 @@ function ModalProduto({ produto, pizzariaId, onSalvar, onFechar }) {
     setDados(p => ({ ...p, subcategorias: p.subcategorias.filter(x => x !== s) }));
   }
 
-  // Tamanhos pizza
   function toggleTamanho(tam) {
     setDados(p => {
       const existe = p.tamanhos.find(t => t.tamanho === tam);
@@ -71,7 +94,6 @@ function ModalProduto({ produto, pizzariaId, onSalvar, onFechar }) {
     });
   }
 
-  // Adicionais
   function addAdicional() {
     setDados(p => ({ ...p, adicionais: [...p.adicionais, { nome: '', preco: 0 }] }));
   }
@@ -97,11 +119,10 @@ function ModalProduto({ produto, pizzariaId, onSalvar, onFechar }) {
     try {
       const url    = editando ? `${API}/produtos/${produto._id}` : `${API}/produtos`;
       const method = editando ? 'PATCH' : 'POST';
-      const body   = { ...dados, pizzariaId };
       const res    = await fetch(url, {
         method,
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-        body: JSON.stringify(body),
+        body: JSON.stringify({ ...dados, pizzariaId }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.erro || 'Erro ao salvar');
@@ -124,7 +145,6 @@ function ModalProduto({ produto, pizzariaId, onSalvar, onFechar }) {
 
         <div className="ca-modal-body">
 
-          {/* Categoria */}
           <div className="ca-secao-titulo">Categoria *</div>
           <div className="ca-categorias-grid">
             {CATEGORIAS_SUGERIDAS.map(cat => (
@@ -139,33 +159,18 @@ function ModalProduto({ produto, pizzariaId, onSalvar, onFechar }) {
             ))}
           </div>
           {!CATEGORIAS_SUGERIDAS.includes(dados.categoria) && (
-            <input
-              className="ca-campo-input"
-              name="categoria"
-              value={dados.categoria}
-              onChange={handle}
-              placeholder="Categoria personalizada"
-              style={{ marginTop: 8 }}
-            />
+            <input className="ca-campo-input" name="categoria" value={dados.categoria}
+              onChange={handle} placeholder="Categoria personalizada" style={{ marginTop: 8 }} />
           )}
-          <button
-            className="ca-link-btn"
-            onClick={() => setDados(p => ({ ...p, categoria: '' }))}
-            style={{ marginTop: 4 }}
-          >
+          <button className="ca-link-btn" onClick={() => setDados(p => ({ ...p, categoria: '' }))} style={{ marginTop: 4 }}>
             + Categoria personalizada
           </button>
 
-          {/* Subcategorias */}
           <div className="ca-secao-titulo" style={{ marginTop: 20 }}>Subcategorias</div>
           <div className="ca-subcat-wrapper">
-            <input
-              className="ca-campo-input"
-              placeholder="Ex: Vegana, Especial, Sem glúten..."
-              value={subcatInput}
-              onChange={e => setSubcatInput(e.target.value)}
-              onKeyDown={e => e.key === 'Enter' && addSubcat()}
-            />
+            <input className="ca-campo-input" placeholder="Ex: Vegana, Especial, Sem glúten..."
+              value={subcatInput} onChange={e => setSubcatInput(e.target.value)}
+              onKeyDown={e => e.key === 'Enter' && addSubcat()} />
             <button className="ca-btn-add-subcat" onClick={addSubcat}>+</button>
           </div>
           {dados.subcategorias.length > 0 && (
@@ -178,11 +183,11 @@ function ModalProduto({ produto, pizzariaId, onSalvar, onFechar }) {
             </div>
           )}
 
-          {/* Nome / Descrição / Imagem */}
           <div className="ca-secao-titulo" style={{ marginTop: 20 }}>Informações básicas</div>
           <div className="ca-campo">
             <label>Nome *</label>
-            <input name="nome" value={dados.nome} onChange={handle} placeholder={`Ex: ${dados.categoria === 'Pizza' ? 'Margherita' : dados.categoria === 'Bebida' ? 'Coca-Cola' : dados.categoria === 'Hamburguer' ? 'Smash Burger' : 'Nome do produto'}`} />
+            <input name="nome" value={dados.nome} onChange={handle}
+              placeholder={`Ex: ${dados.categoria === 'Pizza' ? 'Margherita' : dados.categoria === 'Bebida' ? 'Coca-Cola' : dados.categoria === 'Hamburguer' ? 'Smash Burger' : 'Nome do produto'}`} />
           </div>
           <div className="ca-campo">
             <label>Descrição</label>
@@ -194,24 +199,17 @@ function ModalProduto({ produto, pizzariaId, onSalvar, onFechar }) {
             {dados.imagem && <img src={dados.imagem} alt="preview" className="ca-img-preview" />}
           </div>
 
-          {/* Preço único (não pizza) */}
           {!ehPizza && (
             <>
               <div className="ca-secao-titulo" style={{ marginTop: 20 }}>Preço *</div>
               <div className="ca-campo">
                 <label>Preço (R$)</label>
-                <input
-                  type="number" min="0" step="0.01"
-                  name="preco"
-                  value={dados.preco}
-                  onChange={e => setDados(p => ({ ...p, preco: Number(e.target.value) }))}
-                  placeholder="0,00"
-                />
+                <input type="number" min="0" step="0.01" name="preco" value={dados.preco}
+                  onChange={e => setDados(p => ({ ...p, preco: Number(e.target.value) }))} placeholder="0,00" />
               </div>
             </>
           )}
 
-          {/* Tamanhos (pizza) */}
           {ehPizza && (
             <>
               <div className="ca-secao-titulo" style={{ marginTop: 20 }}>Tamanhos *</div>
@@ -243,7 +241,6 @@ function ModalProduto({ produto, pizzariaId, onSalvar, onFechar }) {
             </>
           )}
 
-          {/* Adicionais */}
           <div className="ca-secao-titulo" style={{ marginTop: 20 }}>
             Adicionais
             <button className="ca-btn-add-adicional" onClick={addAdicional}>+ Adicionar</button>
@@ -278,12 +275,13 @@ export default function CardapioAdmin() {
   const { pizzariaId } = useParams();
   const navigate       = useNavigate();
 
-  const [produtos, setProdutos]         = useState([]);
-  const [loading, setLoading]           = useState(true);
-  const [erro, setErro]                 = useState(null);
-  const [modalProduto, setModalProduto] = useState(null);
-  const [deletando, setDeletando]       = useState(null);
-  const [busca, setBusca]               = useState('');
+  const [produtos, setProdutos]               = useState([]);
+  const [loading, setLoading]                 = useState(true);
+  const [erro, setErro]                       = useState(null);
+  const [modalProduto, setModalProduto]       = useState(null);
+  const [deletando, setDeletando]             = useState(null);
+  const [confirmarExclusao, setConfirmarExclusao] = useState(null);
+  const [busca, setBusca]                     = useState('');
   const [categoriaFiltro, setCategoriaFiltro] = useState('Todas');
   const [subcatFiltro, setSubcatFiltro]       = useState('Todas');
 
@@ -307,22 +305,17 @@ export default function CardapioAdmin() {
     }
   }
 
-  // Categorias únicas
   const categorias = useMemo(() => {
     const cats = [...new Set(produtos.map(p => p.categoria).filter(Boolean))];
     return ['Todas', ...cats];
   }, [produtos]);
 
-  // Subcategorias da categoria ativa
   const subcategorias = useMemo(() => {
     if (categoriaFiltro === 'Todas') return [];
-    const subs = produtos
-      .filter(p => p.categoria === categoriaFiltro)
-      .flatMap(p => p.subcategorias || []);
+    const subs = produtos.filter(p => p.categoria === categoriaFiltro).flatMap(p => p.subcategorias || []);
     return [...new Set(subs)];
   }, [produtos, categoriaFiltro]);
 
-  // Produtos filtrados
   const produtosFiltrados = useMemo(() => {
     return produtos.filter(p => {
       const porCategoria = categoriaFiltro === 'Todas' || p.categoria === categoriaFiltro;
@@ -335,20 +328,17 @@ export default function CardapioAdmin() {
   }, [produtos, categoriaFiltro, subcatFiltro, busca]);
 
   function handleSalvar(produto, editando) {
-    setProdutos(prev => editando
-      ? prev.map(p => p._id === produto._id ? produto : p)
-      : [produto, ...prev]
-    );
+    setProdutos(prev => editando ? prev.map(p => p._id === produto._id ? produto : p) : [produto, ...prev]);
     setModalProduto(null);
   }
 
-  async function handleDeletar(id) {
-    if (!confirm('Excluir este produto?')) return;
-    setDeletando(id);
+  async function executarDeletar(produto) {
+    setConfirmarExclusao(null);
+    setDeletando(produto._id);
     const token = localStorage.getItem('token');
     try {
-      await fetch(`${API}/produtos/${id}`, { method: 'DELETE', headers: { Authorization: `Bearer ${token}` } });
-      setProdutos(prev => prev.filter(p => p._id !== id));
+      await fetch(`${API}/produtos/${produto._id}`, { method: 'DELETE', headers: { Authorization: `Bearer ${token}` } });
+      setProdutos(prev => prev.filter(p => p._id !== produto._id));
     } catch (err) {
       alert('Erro ao excluir: ' + err.message);
     } finally {
@@ -377,8 +367,6 @@ export default function CardapioAdmin() {
 
         {!loading && !erro && produtos.length > 0 && (
           <div className="ca-filtros">
-
-            {/* Busca */}
             <div className="ca-busca-wrapper">
               <span className="ca-busca-icon">🔍</span>
               <input className="ca-busca-input" placeholder="Buscar produto..."
@@ -386,14 +374,10 @@ export default function CardapioAdmin() {
               {busca && <button className="ca-busca-limpar" onClick={() => setBusca('')}>✕</button>}
             </div>
 
-            {/* Categorias */}
             <div className="ca-abas">
               {categorias.map(cat => (
-                <button
-                  key={cat}
-                  className={`ca-aba ${categoriaFiltro === cat ? 'ativo' : ''}`}
-                  onClick={() => handleCategoriaFiltro(cat)}
-                >
+                <button key={cat} className={`ca-aba ${categoriaFiltro === cat ? 'ativo' : ''}`}
+                  onClick={() => handleCategoriaFiltro(cat)}>
                   {cat}
                   {cat !== 'Todas' && (
                     <span className="ca-aba-count">{produtos.filter(p => p.categoria === cat).length}</span>
@@ -402,23 +386,11 @@ export default function CardapioAdmin() {
               ))}
             </div>
 
-            {/* Subcategorias */}
             {subcategorias.length > 0 && (
               <div className="ca-subabas">
-                <button
-                  className={`ca-subaba ${subcatFiltro === 'Todas' ? 'ativo' : ''}`}
-                  onClick={() => setSubcatFiltro('Todas')}
-                >
-                  Todas
-                </button>
+                <button className={`ca-subaba ${subcatFiltro === 'Todas' ? 'ativo' : ''}`} onClick={() => setSubcatFiltro('Todas')}>Todas</button>
                 {subcategorias.map(sub => (
-                  <button
-                    key={sub}
-                    className={`ca-subaba ${subcatFiltro === sub ? 'ativo' : ''}`}
-                    onClick={() => setSubcatFiltro(sub)}
-                  >
-                    {sub}
-                  </button>
+                  <button key={sub} className={`ca-subaba ${subcatFiltro === sub ? 'ativo' : ''}`} onClick={() => setSubcatFiltro(sub)}>{sub}</button>
                 ))}
               </div>
             )}
@@ -462,22 +434,17 @@ export default function CardapioAdmin() {
                   <div className="ca-card-descricao">{produto.descricao || '—'}</div>
                   <div className="ca-card-tags">
                     <span className="ca-tag categoria">{produto.categoria}</span>
-                    {produto.subcategorias?.map(s => (
-                      <span key={s} className="ca-tag">{s}</span>
-                    ))}
+                    {produto.subcategorias?.map(s => <span key={s} className="ca-tag">{s}</span>)}
                     {produto.tamanhos?.length > 0
-                      ? produto.tamanhos.map(t => (
-                          <span key={t.tamanho} className="ca-tag preco">{t.tamanho} · {formatarPreco(t.preco)}</span>
-                        ))
-                      : produto.preco > 0 && (
-                          <span className="ca-tag preco">{formatarPreco(produto.preco)}</span>
-                        )
+                      ? produto.tamanhos.map(t => <span key={t.tamanho} className="ca-tag preco">{t.tamanho} · {formatarPreco(t.preco)}</span>)
+                      : produto.preco > 0 && <span className="ca-tag preco">{formatarPreco(produto.preco)}</span>
                     }
                   </div>
                 </div>
                 <div className="ca-card-acoes">
                   <button className="ca-btn-editar" onClick={() => setModalProduto(produto)}>✏️</button>
-                  <button className="ca-btn-deletar" onClick={() => handleDeletar(produto._id)} disabled={deletando === produto._id}>
+                  <button className="ca-btn-deletar" onClick={() => setConfirmarExclusao(produto)}
+                    disabled={deletando === produto._id}>
                     {deletando === produto._id ? '⏳' : '🗑️'}
                   </button>
                 </div>
@@ -488,11 +455,14 @@ export default function CardapioAdmin() {
       </div>
 
       {modalProduto !== null && (
-        <ModalProduto
-          produto={modalProduto}
-          pizzariaId={pizzariaId}
-          onSalvar={handleSalvar}
-          onFechar={() => setModalProduto(null)}
+        <ModalProduto produto={modalProduto} pizzariaId={pizzariaId} onSalvar={handleSalvar} onFechar={() => setModalProduto(null)} />
+      )}
+
+      {confirmarExclusao && (
+        <ModalConfirmarExclusao
+          produto={confirmarExclusao}
+          onConfirmar={() => executarDeletar(confirmarExclusao)}
+          onCancelar={() => setConfirmarExclusao(null)}
         />
       )}
     </div>
