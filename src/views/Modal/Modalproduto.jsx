@@ -1,14 +1,22 @@
-import { useState } from 'react';
-import './Modalpizza.css'; // reutiliza o mesmo CSS
+import { useState, useEffect } from 'react';
+import './Modalpizza.css';
 
 function formatarPreco(valor) {
   return `R$ ${Number(valor).toFixed(2).replace('.', ',')}`;
 }
 
-export default function ModalProduto({ produto, onFechar, onAdicionarAoPedido }) {
+export default function ModalProduto({ produto, onFechar, onAdicionarAoPedido, itemEditando }) {
   const [adicionaisSelecionados, setAdicionaisSelecionados] = useState([]);
   const [observacao, setObservacao] = useState('');
   const [quantidade, setQuantidade] = useState(1);
+
+  useEffect(() => {
+    if (itemEditando) {
+      setAdicionaisSelecionados(itemEditando.adicionais || []);
+      setObservacao(itemEditando.observacao || '');
+      setQuantidade(itemEditando.quantidade || 1);
+    }
+  }, [itemEditando]);
 
   function toggleAdicional(adicional) {
     setAdicionaisSelecionados(prev =>
@@ -23,15 +31,15 @@ export default function ModalProduto({ produto, onFechar, onAdicionarAoPedido })
 
   function handleConfirmar() {
     onAdicionarAoPedido({
-      produtoId:    produto._id,
-      nomeProduto:  produto.nome,
-      tamanho:      null,
-      preco:        produto.preco,
-      sabores:      [],
-      adicionais:   adicionaisSelecionados,
+      produtoId:   produto._id,
+      nomeProduto: produto.nome,
+      tamanho:     null,
+      preco:       produto.preco,
+      sabores:     [],
+      adicionais:  adicionaisSelecionados,
       quantidade,
       observacao,
-      totalItem:    total,
+      totalItem:   total,
     });
     onFechar();
   }
@@ -42,7 +50,7 @@ export default function ModalProduto({ produto, onFechar, onAdicionarAoPedido })
 
         <div className="modal-header">
           <div>
-            <div className="modal-titulo">{produto.nome}</div>
+            <div className="modal-titulo">{itemEditando ? 'Editar item' : produto.nome}</div>
             <div className="modal-subtitulo">{produto.categoria}</div>
           </div>
           <button className="modal-fechar" onClick={onFechar}>✕</button>
@@ -51,10 +59,8 @@ export default function ModalProduto({ produto, onFechar, onAdicionarAoPedido })
         <div className="modal-body">
 
           {produto.imagem && (
-            <img
-              src={produto.imagem} alt={produto.nome}
-              style={{ width: '100%', borderRadius: 12, marginBottom: 16, maxHeight: 180, objectFit: 'cover' }}
-            />
+            <img src={produto.imagem} alt={produto.nome}
+              style={{ width: '100%', borderRadius: 12, marginBottom: 16, maxHeight: 180, objectFit: 'cover' }} />
           )}
 
           {produto.descricao && (
@@ -106,7 +112,7 @@ export default function ModalProduto({ produto, onFechar, onAdicionarAoPedido })
             <button className="qtd-btn" onClick={() => setQuantidade(q => q + 1)}>+</button>
           </div>
           <button className="btn-adicionar-pedido" onClick={handleConfirmar}>
-            Adicionar · {formatarPreco(total)}
+            {itemEditando ? 'Salvar alterações' : 'Adicionar'} · {formatarPreco(total)}
           </button>
         </div>
 

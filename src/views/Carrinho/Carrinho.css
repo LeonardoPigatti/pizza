@@ -357,3 +357,21 @@
     right: 16px;
   }
 }
+
+/* Botão editar item */
+.item-btn-editar {
+  background: none;
+  border: 1px solid #e03c1f;
+  color: #e03c1f;
+  font-size: 0.72rem;
+  font-weight: 600;
+  padding: 3px 10px;
+  border-radius: 20px;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+  white-space: nowrap;
+}
+.item-btn-editar:hover {
+  background: #e03c1f;
+  color: #fff;
+}

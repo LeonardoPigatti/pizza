@@ -2,7 +2,7 @@ import { useState, useEffect, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import './Cardapio.css';
 import ModalPizza from '../Modal/Modalpizza.jsx';
-import ModalProduto from '../Modal/ModalProduto.jsx';
+import ModalProduto from '../Modal/Modalproduto.jsx';
 import Carrinho, { CarrinhoFAB } from '../Carrinho/Carrinho.jsx';
 import { useCarrinho } from '../Carrinho/useCarrinho.js';
 
@@ -54,17 +54,19 @@ export default function Cardapio() {
   const { pizzariaId } = useParams();
   const navigate = useNavigate();
 
-  const [pizzaria, setPizzaria]               = useState(null);
-  const [produtos, setProdutos]               = useState([]);
-  const [loading, setLoading]                 = useState(true);
-  const [erro, setErro]                       = useState(null);
-  const [categoriaAtiva, setCategoriaAtiva]   = useState('Todas');
-  const [subcatAtiva, setSubcatAtiva]         = useState('Todas');
-  const [busca, setBusca]                     = useState('');
-  const [modalProduto, setModalProduto]       = useState(null);
-  const [carrinhoAberto, setCarrinhoAberto]   = useState(false);
+  const [pizzaria, setPizzaria]             = useState(null);
+  const [produtos, setProdutos]             = useState([]);
+  const [loading, setLoading]               = useState(true);
+  const [erro, setErro]                     = useState(null);
+  const [categoriaAtiva, setCategoriaAtiva] = useState('Todas');
+  const [subcatAtiva, setSubcatAtiva]       = useState('Todas');
+  const [busca, setBusca]                   = useState('');
+  const [carrinhoAberto, setCarrinhoAberto] = useState(false);
 
-  const { itens, totalItens, subtotal, adicionarItem, alterarQuantidade, removerItem } = useCarrinho();
+  // Modal: { produto, itemEditando | null }
+  const [modalAberto, setModalAberto] = useState(null);
+
+  const { itens, totalItens, subtotal, adicionarItem, alterarQuantidade, editarItem, removerItem } = useCarrinho();
 
   useEffect(() => {
     async function carregar() {
@@ -118,13 +120,38 @@ export default function Cardapio() {
     setSubcatAtiva('Todas');
   }
 
+  // Abre modal para ADICIONAR novo item
   function handleEscolher(produto) {
-    setModalProduto(produto);
+    setModalAberto({ produto, itemEditando: null });
   }
 
-  function handleAdicionarAoPedido(item) {
-    adicionarItem(item);
-    setCarrinhoAberto(true);
+  // Abre modal para EDITAR item existente do carrinho
+  function handleEditar(item) {
+    // Encontra o produto completo pelo produtoId para ter tamanhos/adicionais disponíveis
+    const produto = produtos.find(p => p._id === item.produtoId);
+    if (!produto) return; // segurança
+    setCarrinhoAberto(false); // fecha o carrinho para o modal ficar por cima
+    setModalAberto({ produto, itemEditando: item });
+  }
+
+  // Chamado pelo modal ao confirmar
+  function handleConfirmarModal(dadosNovos) {
+    if (modalAberto.itemEditando) {
+      // edição — substitui o item mantendo o id
+      editarItem(modalAberto.itemEditando.id, dadosNovos);
+      setCarrinhoAberto(true); // reabre o carrinho após editar
+    } else {
+      // adição nova
+      adicionarItem(dadosNovos);
+      setCarrinhoAberto(true);
+    }
+    setModalAberto(null);
+  }
+
+  function handleFecharModal() {
+    // se estava editando, reabre o carrinho ao fechar
+    if (modalAberto?.itemEditando) setCarrinhoAberto(true);
+    setModalAberto(null);
   }
 
   function handleFinalizarPedido() {
@@ -151,10 +178,10 @@ export default function Cardapio() {
               {pizzaria?.avaliacaoMedia > 0 && (
                 <span className="banner-info">⭐ {pizzaria.avaliacaoMedia.toFixed(1)}</span>
               )}
-              <span className="banner-info">🕐 {pizzaria?.tempoMedioEntrega || 40} min</span>
+              <span className="banner-info">⏰ Tempo de Espera: {pizzaria?.tempoMedioEntrega || 40} min</span>
               {enderecoTexto && <span className="banner-info">📍 {enderecoTexto}</span>}
               {pizzaria?.horarios?.abertura && (
-                <span className="banner-info">🕒 {pizzaria.horarios.abertura} – {pizzaria.horarios.fechamento}</span>
+                <span className="banner-info">🕒 Horario De Funcionamento: {pizzaria.horarios.abertura} – {pizzaria.horarios.fechamento}</span>
               )}
             </div>
           </div>
@@ -176,40 +203,29 @@ export default function Cardapio() {
       <div className="categorias-bar-wrapper">
         <div className="categorias-bar">
           {categorias.map(cat => (
-            <button
-              key={cat}
+            <button key={cat}
               className={`categoria-tab ${categoriaAtiva === cat ? 'ativa' : ''}`}
               onClick={() => handleCategoriaAtiva(cat)}
             >
               {cat}
               <span className="cat-count">
-                {cat === 'Todas'
-                  ? produtos.length
-                  : produtos.filter(p => p.categoria === cat).length}
+                {cat === 'Todas' ? produtos.length : produtos.filter(p => p.categoria === cat).length}
               </span>
             </button>
           ))}
         </div>
       </div>
 
-      {/* Subabas de subcategoria */}
+      {/* Subabas */}
       {subcategorias.length > 0 && (
         <div className="subcategorias-bar-wrapper">
           <div className="subcategorias-bar">
-            <button
-              className={`subcat-tab ${subcatAtiva === 'Todas' ? 'ativa' : ''}`}
-              onClick={() => setSubcatAtiva('Todas')}
-            >
-              Todas
-            </button>
+            <button className={`subcat-tab ${subcatAtiva === 'Todas' ? 'ativa' : ''}`}
+              onClick={() => setSubcatAtiva('Todas')}>Todas</button>
             {subcategorias.map(sub => (
-              <button
-                key={sub}
+              <button key={sub}
                 className={`subcat-tab ${subcatAtiva === sub ? 'ativa' : ''}`}
-                onClick={() => setSubcatAtiva(sub)}
-              >
-                {sub}
-              </button>
+                onClick={() => setSubcatAtiva(sub)}>{sub}</button>
             ))}
           </div>
         </div>
@@ -229,28 +245,33 @@ export default function Cardapio() {
         </div>
       </div>
 
-      {modalProduto && modalProduto.temSabores && (
+      {/* Modais */}
+      {modalAberto && modalAberto.produto.temSabores && (
         <ModalPizza
-          produto={modalProduto}
-          onFechar={() => setModalProduto(null)}
-          onAdicionarAoPedido={handleAdicionarAoPedido}
+          produto={modalAberto.produto}
+          itemEditando={modalAberto.itemEditando}
+          onFechar={handleFecharModal}
+          onAdicionarAoPedido={handleConfirmarModal}
         />
       )}
-      {modalProduto && !modalProduto.temSabores && (
+      {modalAberto && !modalAberto.produto.temSabores && (
         <ModalProduto
-          produto={modalProduto}
-          onFechar={() => setModalProduto(null)}
-          onAdicionarAoPedido={handleAdicionarAoPedido}
+          produto={modalAberto.produto}
+          itemEditando={modalAberto.itemEditando}
+          onFechar={handleFecharModal}
+          onAdicionarAoPedido={handleConfirmarModal}
         />
       )}
 
       <CarrinhoFAB totalItens={totalItens} onClick={() => setCarrinhoAberto(true)} />
       {carrinhoAberto && (
         <Carrinho
-          itens={itens} subtotal={subtotal}
+          itens={itens}
+          subtotal={subtotal}
           onFechar={() => setCarrinhoAberto(false)}
           onAlterarQtd={alterarQuantidade}
           onRemover={removerItem}
+          onEditar={handleEditar}
           onFinalizarPedido={handleFinalizarPedido}
         />
       )}
