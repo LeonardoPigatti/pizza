@@ -113,6 +113,9 @@ export default function Dashboard() {
   const [chatPedidoId, setChatPedidoId] = useState(null);
   const [modalRetrocesso, setModalRetrocesso] = useState(null);
   const [menuAberto, setMenuAberto]     = useState(false);
+  const [statusLoja, setStatusLoja]     = useState('open');
+  const [modalFecharLoja, setModalFecharLoja] = useState(false);
+  const [modalLojaAviso, setModalLojaAviso]   = useState(false);
 
   // pedidoId → true quando há mensagem não lida
   const [naoLidas, setNaoLidas] = useState({});
@@ -168,13 +171,16 @@ export default function Dashboard() {
     async function buscar() {
       const token = localStorage.getItem('token');
       try {
-        const res  = await fetch(`${API}/pedidos`, {
-          headers: { Authorization: `Bearer ${token}` },
-        });
-        const data = await res.json();
-        if (res.status === 401) { navigate('/login'); return; }
-        if (!res.ok) throw new Error(data.erro);
+        const [resPedidos, resPizzaria] = await Promise.all([
+          fetch(`${API}/pedidos`, { headers: { Authorization: `Bearer ${token}` } }),
+          fetch(`${API}/pizzarias/${pizzariaId}`),
+        ]);
+        const data = await resPedidos.json();
+        if (resPedidos.status === 401) { navigate('/login'); return; }
+        if (!resPedidos.ok) throw new Error(data.erro);
         setPedidos(data.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt)));
+        const pizzariaData = await resPizzaria.json();
+        if (resPizzaria.ok) setStatusLoja(pizzariaData.status || 'open');
       } catch (err) {
         setErro(err.message);
       } finally {
@@ -269,6 +275,24 @@ export default function Dashboard() {
     navigate('/login');
   }
 
+  async function confirmarFecharLoja() {
+    const novoStatus = statusLoja === 'open' ? 'closed' : 'open';
+    const token = localStorage.getItem('token');
+    try {
+      const res = await fetch(`${API}/pizzarias/${pizzariaId}/status`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ status: novoStatus }),
+      });
+      if (!res.ok) throw new Error('Erro ao atualizar status da loja');
+      setStatusLoja(novoStatus);
+    } catch (err) {
+      alert(err.message);
+    } finally {
+      setModalFecharLoja(false);
+    }
+  }
+
   return (
     <div className="dashboard-page">
 
@@ -299,6 +323,23 @@ export default function Dashboard() {
                     </button>
                     <button className="menu-admin-item" onClick={() => { setMenuAberto(false); navigate(`/cardapio-admin/${pizzariaId}`); }}>
                       🍕 Editar cardápio
+                    </button>
+                    <div className="menu-admin-divider" />
+                    <button
+                      className={`menu-admin-item ${statusLoja === 'open' ? 'fechar-loja' : 'abrir-loja'}`}
+                      onClick={() => {
+                        setMenuAberto(false);
+                        if (statusLoja === 'open') {
+                          const abertos = pedidos.filter(p => p.statusPedido !== 'Concluido');
+                          if (abertos.length > 0) {
+                            setModalLojaAviso(abertos.length);
+                            return;
+                          }
+                        }
+                        setModalFecharLoja(true);
+                      }}
+                    >
+                      {statusLoja === 'open' ? '🔒 Fechar loja' : '🔓 Abrir loja'}
                     </button>
                   </div>
                 </>
@@ -407,7 +448,7 @@ export default function Dashboard() {
                     <strong>{pedido.contato?.nome}</strong>
                     {pedido.contato?.telefone}
                     {pedido.enderecoEntrega?.bairro && (
-                      <span style={{ display: 'block' }}>{pedido.enderecoEntrega.bairro}</span>
+                      <span style={{ display: 'block' }}>📍 {pedido.enderecoEntrega.bairro}</span>
                     )}
                     {perfil === 'motoboy' && pedido.enderecoEntrega?.rua && (
                       <button className="btn-mapa" onClick={() => abrirMapa(pedido.enderecoEntrega)}>
@@ -416,7 +457,7 @@ export default function Dashboard() {
                     )}
                     {pedido.contato?.telefone && (
                       <a className="btn-ligar" href={`tel:${pedido.contato.telefone.replace(/\D/g, '')}`}>
-                        Ligar
+                        📞 Ligar
                       </a>
                     )}
                   </div>
@@ -425,7 +466,7 @@ export default function Dashboard() {
                     {formatarPreco(calcularTotalPedido(pedido))}
                   </div>
                   <div style={{ fontSize: '0.75rem', color: '#aaa', marginBottom: 4 }}>
-                    {pedido.pagamento}
+                    💳 {pedido.pagamento}
                   </div>
 
                   {perfil === 'motoboy' ? (
@@ -528,6 +569,61 @@ export default function Dashboard() {
           onConfirmar={confirmarRetrocesso}
           onCancelar={() => setModalRetrocesso(null)}
         />
+      )}
+
+      {modalLojaAviso && (
+        <div className="modal-overlay" onClick={() => setModalLojaAviso(false)}>
+          <div className="modal-retrocesso" onClick={e => e.stopPropagation()}>
+            <div className="modal-retrocesso-header">
+              <span>⚠️ Não é possível fechar</span>
+              <button onClick={() => setModalLojaAviso(false)}>✕</button>
+            </div>
+            <div className="modal-retrocesso-body" style={{ textAlign: 'center', padding: '28px 24px 16px' }}>
+              <div style={{ fontSize: '2.5rem', marginBottom: 12 }}>⏳</div>
+              <p style={{ fontWeight: 700, fontSize: '1rem', color: '#222', marginBottom: 6 }}>
+                Você tem <span style={{ color: '#e03c1f' }}>{modalLojaAviso} pedido{modalLojaAviso > 1 ? 's' : ''}</span> em andamento
+              </p>
+              <p style={{ fontSize: '0.82rem', color: '#999' }}>
+                Conclua todos os pedidos antes de fechar a loja.
+              </p>
+            </div>
+            <div className="modal-retrocesso-footer">
+              <button className="btn-confirmar-retrocesso" onClick={() => setModalLojaAviso(false)}>Entendido</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {modalFecharLoja && (
+        <div className="modal-overlay" onClick={() => setModalFecharLoja(false)}>
+          <div className="modal-retrocesso" onClick={e => e.stopPropagation()}>
+            <div className="modal-retrocesso-header">
+              <span>{statusLoja === 'open' ? '🔒 Fechar loja' : '🔓 Abrir loja'}</span>
+              <button onClick={() => setModalFecharLoja(false)}>✕</button>
+            </div>
+            <div className="modal-retrocesso-body" style={{ textAlign: 'center', padding: '28px 24px 16px' }}>
+              <div style={{ fontSize: '2.5rem', marginBottom: 12 }}>
+                {statusLoja === 'open' ? '🔒' : '🔓'}
+              </div>
+              <p style={{ fontWeight: 700, fontSize: '1rem', color: '#222', marginBottom: 6 }}>
+                {statusLoja === 'open'
+                  ? 'Tem certeza que deseja fechar a loja?'
+                  : 'Tem certeza que deseja abrir a loja?'}
+              </p>
+              <p style={{ fontSize: '0.82rem', color: '#999' }}>
+                {statusLoja === 'open'
+                  ? 'Os clientes não conseguirão fazer novos pedidos.'
+                  : 'A loja voltará a aceitar pedidos.'}
+              </p>
+            </div>
+            <div className="modal-retrocesso-footer">
+              <button className="btn-cancelar-retrocesso" onClick={() => setModalFecharLoja(false)}>Cancelar</button>
+              <button className="btn-confirmar-retrocesso" onClick={confirmarFecharLoja}>
+                {statusLoja === 'open' ? 'Fechar loja' : 'Abrir loja'}
+              </button>
+            </div>
+          </div>
+        </div>
       )}
 
     </div>

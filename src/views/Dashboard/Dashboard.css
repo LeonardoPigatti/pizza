@@ -240,11 +240,19 @@
   grid-template-columns: 1fr 1fr;
   grid-template-areas:
     "contato  preco"
-    "contato  acoes"
-    "contato  acoes";
+    "contato  pagamento"
+    "ligar    acoes"
+    "ligar    acoes";
   gap: 4px 20px;
   padding: 4px 0 14px 16px;
   align-items: start;
+}
+
+.pedido-ligar-area {
+  grid-area: ligar;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
 }
 
 .pedido-contato {
@@ -777,3 +785,14 @@
   0%, 100% { opacity: 1; transform: scale(1); }
   50%       { opacity: 0.6; transform: scale(1.05); }
 }
+
+.menu-admin-divider {
+  height: 1px;
+  background: #f0f0f0;
+  margin: 4px 0;
+}
+
+.menu-admin-item.fechar-loja { color: #e03c1f; }
+.menu-admin-item.fechar-loja:hover { background: #fef2f2; }
+.menu-admin-item.abrir-loja  { color: #16a34a; }
+.menu-admin-item.abrir-loja:hover  { background: #f0fdf4; }

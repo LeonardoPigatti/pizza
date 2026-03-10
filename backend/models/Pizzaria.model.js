@@ -24,8 +24,9 @@ const PizzariaSchema = new mongoose.Schema({
 
   // Avaliações
   avaliacaoMedia: { type: Number, default: 0 },
-  avaliacaoTotal: { type: Number, default: 0 }, // soma de todas as notas
-  avaliacaoCount: { type: Number, default: 0 }, // quantidade de avaliações
+  avaliacaoTotal: { type: Number, default: 0 },
+  avaliacaoCount: { type: Number, default: 0 },
+  status: { type: String, enum: ['open', 'closed'], default: 'open' },
 }, { timestamps: true });
 
 module.exports = mongoose.model('Pizzaria', PizzariaSchema);

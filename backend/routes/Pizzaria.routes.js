@@ -1,6 +1,7 @@
 const router   = require('express').Router();
 const Pizzaria = require('../models/Pizzaria.model');
 const mongoose = require('mongoose');
+const authMiddleware = require('../middleware/auth.middleware');
 
 // GET /api/pizzarias/:id
 router.get('/:id', async (req, res) => {
@@ -31,6 +32,27 @@ router.patch('/:id', async (req, res) => {
     res.json(pizzaria);
   } catch (err) {
     res.status(400).json({ erro: err.message });
+  }
+});
+
+// Adicionar esta rota no pizzaria.routes.js, antes do module.exports:
+
+// PATCH /api/pizzarias/:id/status — abre ou fecha a loja
+router.patch('/:id/status', authMiddleware, async (req, res) => {
+  try {
+    const { status } = req.body; // 'open' ou 'closed'
+    if (!['open', 'closed'].includes(status))
+      return res.status(400).json({ erro: 'Status inválido' });
+
+    const pizzaria = await Pizzaria.findByIdAndUpdate(
+      req.params.id,
+      { status },
+      { new: true }
+    );
+    if (!pizzaria) return res.status(404).json({ erro: 'Pizzaria não encontrada' });
+    res.json(pizzaria);
+  } catch (err) {
+    res.status(500).json({ erro: err.message });
   }
 });
 
