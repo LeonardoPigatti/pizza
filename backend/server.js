@@ -7,9 +7,10 @@ const { conectarBanco } = require('./config/database');
 
 const produtoRoutes   = require('./routes/produto.routes');
 const pedidoRoutes    = require('./routes/pedido.routes');
-const pizzariaRoutes  = require('./routes/pizzaria.routes');
+const pizzariaRoutes  = require('./routes/Pizzaria.routes');
 const authRoutes      = require('./routes/auth.routes');
 const mensagemRoutes  = require('./routes/mensagem.routes');
+
 
 const Mensagem = require('./models/Mensagem.model');
 
@@ -61,6 +62,7 @@ app.use('/api/produtos',   produtoRoutes);
 app.use('/api/pedidos',    pedidoRoutes);
 app.use('/api/pizzarias',  pizzariaRoutes);
 app.use('/api/mensagens',  mensagemRoutes);
+app.use('/api/avaliacoes', require('./routes/avaliacao.routes'));
 
 app.get('/', (req, res) => res.json({ status: 'API Pizzaria rodando' }));
 
