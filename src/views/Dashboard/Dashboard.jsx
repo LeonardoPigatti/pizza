@@ -16,9 +16,20 @@ function formatarData(dataISO) {
   return new Date(dataISO).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric' });
 }
 function calcularTotalItem(pizza) {
-  const preco = pizza.preco || pizza.produtoId?.tamanhos?.find(t => t.tamanho === pizza.tamanho)?.preco || 0;
-  const adicionais = pizza.adicionais?.reduce((s, a) => s + a.preco * a.quantidade, 0) || 0;
-  return (preco + adicionais) * pizza.quantidade;
+  let preco = 0;
+  if (pizza.preco && pizza.preco > 0) {
+    // pedido novo — preco salvo diretamente no item
+    preco = pizza.preco;
+  } else if (pizza.tamanho && pizza.produtoId?.tamanhos?.length > 0) {
+    // pizza com tamanho — busca no produtoId populado
+    const tam = pizza.produtoId.tamanhos.find(t => t.tamanho === pizza.tamanho);
+    preco = tam?.preco || 0;
+  } else if (pizza.produtoId?.preco) {
+    // produto sem tamanho (bebida, hambúrguer...)
+    preco = pizza.produtoId.preco;
+  }
+  const adicionais = pizza.adicionais?.reduce((s, a) => s + (a.preco || 0) * (a.quantidade || 1), 0) || 0;
+  return (preco + adicionais) * (pizza.quantidade || 1);
 }
 function calcularTotalPedido(pedido) {
   return pedido.pizzas.reduce((s, p) => s + calcularTotalItem(p), 0);
@@ -275,11 +286,7 @@ export default function Dashboard() {
     navigate('/login');
   }
 
-  function calcularTotalItem(pizza) {
-    const preco = pizza.preco || pizza.produtoId?.tamanhos?.find(t => t.tamanho === pizza.tamanho)?.preco || 0;
-    const adicionais = pizza.adicionais?.reduce((s, a) => s + a.preco * a.quantidade, 0) || 0;
-    return (preco + adicionais) * pizza.quantidade;
-  }
+  // calcularTotalItem definida no escopo global acima
 
   async function confirmarFecharLoja() {
     const novoStatus = statusLoja === 'open' ? 'closed' : 'open';
@@ -521,7 +528,7 @@ export default function Dashboard() {
                     <strong>{pedido.contato?.nome}</strong>
                     {pedido.contato?.telefone}
                     {pedido.enderecoEntrega?.bairro && (
-                      <span style={{ display: 'block' }}>📍 {pedido.enderecoEntrega.bairro}</span>
+                      <span style={{ display: 'block' }}>{pedido.enderecoEntrega.bairro}</span>
                     )}
                     {perfil === 'motoboy' && pedido.enderecoEntrega?.rua && (
                       <button className="btn-mapa" onClick={() => abrirMapa(pedido.enderecoEntrega)}>
