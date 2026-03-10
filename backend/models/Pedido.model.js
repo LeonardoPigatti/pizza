@@ -9,7 +9,7 @@ const AdicionalSelecionadoSchema = new mongoose.Schema({
 const PizzaPedidoSchema = new mongoose.Schema({
   produtoId:   { type: mongoose.Schema.Types.ObjectId, ref: 'Produto', required: true },
   nomeProduto: { type: String, default: '' },
-  tamanho:     { type: String, default: null },   // null para produtos sem tamanho (bebidas, etc)
+  tamanho:     { type: String, default: null },
   preco:       { type: Number, default: 0 },
   sabores:     { type: [String], default: [] },
   adicionais:  { type: [AdicionalSelecionadoSchema], default: [] },
@@ -63,6 +63,8 @@ const PedidoSchema = new mongoose.Schema({
   tempoEsperaEstimado: { type: Number, default: 40 },
   historicoStatus:     { type: [HistoricoStatusSchema], default: [] },
   motoboyPegou:        { type: Boolean, default: false },
+  ipCliente:           { type: String, default: '' },
+  avaliacao:           { type: Number, default: null },
 }, { timestamps: true });
 
 module.exports = mongoose.model('Pedido', PedidoSchema);

@@ -27,7 +27,8 @@ router.get('/:id', async (req, res) => {
 // POST /api/pedidos
 router.post('/', async (req, res) => {
   try {
-    const pedido = await Pedido.create(req.body);
+    const ip = req.headers['x-forwarded-for']?.split(',')[0] || req.socket.remoteAddress || '';
+    const pedido = await Pedido.create({ ...req.body, ipCliente: ip });
     res.status(201).json(pedido);
   } catch (err) {
     res.status(400).json({ erro: err.message });
@@ -46,30 +47,22 @@ router.patch('/:id/status', async (req, res) => {
     const idxNovo      = STATUS_ORDEM.indexOf(statusPedido);
     const ehRetrocesso = idxNovo < idxAtual;
 
-    // Se for retrocesso exige motivo
-    if (ehRetrocesso && !motivo?.trim()) {
+    if (ehRetrocesso && !motivo?.trim())
       return res.status(400).json({ erro: 'Motivo obrigatório para retornar o status' });
-    }
 
-    // Monta o update
     const update = { statusPedido };
 
-    // Se for retrocesso, empurra no histórico
     if (ehRetrocesso) {
       update.$push = {
         historicoStatus: {
-          de:     statusAtual,
-          para:   statusPedido,
-          motivo: motivo.trim(),
-          criadoEm: new Date(),
+          de: statusAtual, para: statusPedido,
+          motivo: motivo.trim(), criadoEm: new Date(),
         }
       };
     }
 
     const atualizado = await Pedido.findByIdAndUpdate(
-      req.params.id,
-      update,
-      { new: true, runValidators: false }
+      req.params.id, update, { new: true, runValidators: false }
     ).populate('pizzas.produtoId');
 
     res.json(atualizado);
@@ -78,18 +71,16 @@ router.patch('/:id/status', async (req, res) => {
   }
 });
 
-// PATCH /api/pedidos/:id/pegar — motoboy confirma que pegou a pizza
+// PATCH /api/pedidos/:id/pegar
 router.patch('/:id/pegar', async (req, res) => {
   try {
     const pedido = await Pedido.findByIdAndUpdate(
-      req.params.id,
-      { motoboyPegou: true },
-      { new: true, runValidators: false }
+      req.params.id, { motoboyPegou: true }, { new: true, runValidators: false }
     ).populate('pizzas.produtoId');
     if (!pedido) return res.status(404).json({ erro: 'Pedido não encontrado' });
     res.json(pedido);
   } catch (err) {
-    res.status(400).json({ erro: err.message });
+    res.status(500).json({ erro: err.message });
   }
 });
 
