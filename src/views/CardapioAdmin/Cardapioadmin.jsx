@@ -251,7 +251,7 @@ function ModalProduto({ produto, pizzariaId, onSalvar, onFechar }) {
           {dados.adicionais.length === 0 && <p className="ca-hint">Nenhum adicional ainda.</p>}
           {dados.adicionais.map((a, i) => (
             <div key={i} className="ca-adicional-row">
-              <input className="ca-adicional-nome" placeholder="Ex: Borda recheada"
+              <input className="ca-adicional-nome" placeholder="Ex: Extra, adicional ou complemento"
                 value={a.nome} onChange={e => setAdicional(i, 'nome', e.target.value)} />
               <input className="ca-adicional-preco" type="number" min="0" step="0.01" placeholder="R$"
                 value={a.preco} onChange={e => setAdicional(i, 'preco', e.target.value)} />
@@ -439,8 +439,6 @@ export default function CardapioAdmin() {
 
         {!loading && !erro && produtos.length === 0 && (
           <div className="ca-vazio">
-            <span>🍕</span>
-            <p>Nenhum produto ainda.</p>
             <button className="ca-btn-novo-vazio" onClick={() => setModalProduto(PRODUTO_VAZIO)}>
               + Criar primeiro produto
             </button>

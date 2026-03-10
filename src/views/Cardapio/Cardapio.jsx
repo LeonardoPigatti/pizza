@@ -138,14 +138,14 @@ export default function Cardapio() {
       {/* Banner */}
       <div className="banner">
         <img className="banner-img"
-          src={pizzaria?.logo || 'https://images.unsplash.com/photo-1513104890138-7c749659a591?w=1400&q=80'}
+          src={pizzaria?.banner || 'https://images.unsplash.com/photo-1513104890138-7c749659a591?w=1400&q=80'}
           alt="Banner" />
         <div className="banner-overlay">
           <div className="banner-inner">
             <h1 className="banner-nome">{pizzaria?.nome || 'Cardápio'}</h1>
             {pizzaria?.descricao && <p className="banner-slogan">{pizzaria.descricao}</p>}
             <div className="banner-infos">
-              <span className="banner-info">⭐ 4.8</span>
+              <span className="banner-info">⭐ {pizzaria?.avaliacaoMedia?.toFixed(1) || '—'}</span>
               <span className="banner-info">🕐Tempo de Espera: {pizzaria?.tempoMedioEntrega || 40} min</span>
               {enderecoTexto && <span className="banner-info">📍 {enderecoTexto}</span>}
               {pizzaria?.horarios?.abertura && (
