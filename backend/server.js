@@ -63,7 +63,7 @@ app.use('/api/pedidos',    pedidoRoutes);
 app.use('/api/pizzarias',  pizzariaRoutes);
 app.use('/api/mensagens',  mensagemRoutes);
 app.use('/api/avaliacoes', require('./routes/avaliacao.routes'));
-
+app.use('/api/financeiro', require('./routes/infoFinanceira.routes'));
 app.get('/', (req, res) => res.json({ status: 'API Pizzaria rodando' }));
 
 const PORT = process.env.PORT || 3001;

@@ -275,10 +275,17 @@ export default function Dashboard() {
     navigate('/login');
   }
 
+  function calcularTotalItem(pizza) {
+    const preco = pizza.preco || pizza.produtoId?.tamanhos?.find(t => t.tamanho === pizza.tamanho)?.preco || 0;
+    const adicionais = pizza.adicionais?.reduce((s, a) => s + a.preco * a.quantidade, 0) || 0;
+    return (preco + adicionais) * pizza.quantidade;
+  }
+
   async function confirmarFecharLoja() {
     const novoStatus = statusLoja === 'open' ? 'closed' : 'open';
     const token = localStorage.getItem('token');
     try {
+      // 1. Atualiza status da loja
       const res = await fetch(`${API}/pizzarias/${pizzariaId}/status`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
@@ -286,6 +293,72 @@ export default function Dashboard() {
       });
       if (!res.ok) throw new Error('Erro ao atualizar status da loja');
       setStatusLoja(novoStatus);
+
+      // 2. Se fechando, salva infos financeiras do dia
+      if (novoStatus === 'closed') {
+        const hoje = new Date().toDateString();
+        const pedidosHoje = pedidos.filter(p =>
+          new Date(p.createdAt).toDateString() === hoje &&
+          p.statusPedido === 'Concluido'
+        );
+
+        const faturamentoTotal = pedidosHoje.reduce((s, p) =>
+          s + p.pizzas.reduce((ps, pizza) => ps + calcularTotalItem(pizza), 0), 0
+        );
+
+        const pedidosCartao   = pedidosHoje.filter(p => p.pagamento === 'Cartao online');
+        const pedidosDinheiro = pedidosHoje.filter(p => p.pagamento === 'Dinheiro na entrega');
+
+        const somarPedido = (pedido) =>
+          pedido.pizzas.reduce((s, pizza) => s + calcularTotalItem(pizza), 0);
+
+        // Top 5 produtos
+        const contagemProdutos = {};
+        pedidosHoje.forEach(p => {
+          p.pizzas.forEach(pizza => {
+            const nome = pizza.nomeProduto || pizza.produtoId?.nome || 'Produto';
+            if (!contagemProdutos[nome]) contagemProdutos[nome] = { nome, quantidade: 0, faturamento: 0 };
+            contagemProdutos[nome].quantidade  += pizza.quantidade;
+            contagemProdutos[nome].faturamento += calcularTotalItem(pizza);
+          });
+        });
+        const topProdutos = Object.values(contagemProdutos)
+          .sort((a, b) => b.quantidade - a.quantidade)
+          .slice(0, 5);
+
+        // Avaliação média do dia
+        const comAvaliacao = pedidosHoje.filter(p => p.avaliacao != null);
+        const avaliacaoMediaDia = comAvaliacao.length > 0
+          ? comAvaliacao.reduce((s, p) => s + p.avaliacao, 0) / comAvaliacao.length
+          : null;
+
+        const agora = new Date();
+        const horaFechamento = agora.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+
+        const infoFinanceira = {
+          pizzariaId,
+          data:              agora,
+          horaFechamento,
+          totalPedidos:      pedidosHoje.length,
+          pedidosEntrega:    pedidosHoje.filter(p => p.tipoEntrega === 'Entrega').length,
+          pedidosRetirada:   pedidosHoje.filter(p => p.tipoEntrega === 'Retirada').length,
+          faturamentoTotal,
+          ticketMedio:       pedidosHoje.length > 0 ? faturamentoTotal / pedidosHoje.length : 0,
+          totalCartaoOnline: pedidosCartao.reduce((s, p) => s + somarPedido(p), 0),
+          totalDinheiro:     pedidosDinheiro.reduce((s, p) => s + somarPedido(p), 0),
+          qtdCartaoOnline:   pedidosCartao.length,
+          qtdDinheiro:       pedidosDinheiro.length,
+          topProdutos,
+          avaliacaoMediaDia: avaliacaoMediaDia ? Math.round(avaliacaoMediaDia * 10) / 10 : null,
+          totalAvaliacoesDia: comAvaliacao.length,
+        };
+
+        await fetch(`${API}/financeiro`, {
+          method:  'POST',
+          headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+          body:    JSON.stringify(infoFinanceira),
+        });
+      }
     } catch (err) {
       alert(err.message);
     } finally {
