@@ -9,52 +9,78 @@ const VAZIO = {
   endereco: { rua: '', numero: '', complemento: '', bairro: '', cidade: '', estado: '', cep: '' },
   horarios:  { abertura: '18:00', fechamento: '23:00' },
   tempoMedioEntrega: 40,
+  taxaEntrega: 0,
 };
+
+const CUPOM_VAZIO = { codigo: '', tipo: 'percentual', valor: '' };
+
+function formatarPreco(v) {
+  return `R$ ${Number(v).toFixed(2).replace('.', ',')}`;
+}
+
+function labelTipo(tipo) {
+  if (tipo === 'percentual')   return '% off';
+  if (tipo === 'fixo')         return 'R$ off';
+  if (tipo === 'frete_gratis') return 'Frete grátis';
+  return tipo;
+}
 
 export default function PerfilPizzaria() {
   const { pizzariaId } = useParams();
   const navigate       = useNavigate();
 
-  const [dados, setDados]         = useState(VAZIO);
-  const [loading, setLoading]     = useState(true);
-  const [salvando, setSalvando]   = useState(false);
-  const [sucesso, setSucesso]     = useState(false);
-  const [erro, setErro]           = useState(null);
+  const [dados, setDados]           = useState(VAZIO);
+  const [loading, setLoading]       = useState(true);
+  const [salvando, setSalvando]     = useState(false);
+  const [sucesso, setSucesso]       = useState(false);
+  const [erro, setErro]             = useState(null);
   const [buscandoCep, setBuscandoCep] = useState(false);
-  const [erroCep, setErroCep]     = useState(null);
+  const [erroCep, setErroCep]       = useState(null);
+
+  // Cupons
+  const [cupons, setCupons]         = useState([]);
+  const [novoCupom, setNovoCupom]   = useState(CUPOM_VAZIO);
+  const [salvandoCupom, setSalvandoCupom] = useState(false);
+  const [erroCupom, setErroCupom]   = useState(null);
+  const [deletandoCupom, setDeletandoCupom] = useState(null);
 
   useEffect(() => {
     const token = localStorage.getItem('token');
     if (!token) { navigate('/login'); return; }
 
-    fetch(`${API}/pizzarias/${pizzariaId}`)
-      .then(r => r.json())
-      .then(data => {
-        setDados({
-          nome:      data.nome      || '',
-          descricao: data.descricao || '',
-          telefone:  data.telefone  || '',
-          email:     data.email     || '',
-          banner:    data.banner    || '',
-          logo:      data.logo      || '',
-          endereco: {
-            rua:         data.endereco?.rua         || '',
-            numero:      data.endereco?.numero      || '',
-            complemento: data.endereco?.complemento || '',
-            bairro:      data.endereco?.bairro      || '',
-            cidade:      data.endereco?.cidade      || '',
-            estado:      data.endereco?.estado      || '',
-            cep:         data.endereco?.cep         || '',
-          },
-          horarios: {
-            abertura:   data.horarios?.abertura   || '18:00',
-            fechamento: data.horarios?.fechamento || '23:00',
-          },
-          tempoMedioEntrega: data.tempoMedioEntrega ?? 40,
-        });
-      })
-      .catch(() => setErro('Erro ao carregar dados'))
-      .finally(() => setLoading(false));
+    Promise.all([
+      fetch(`${API}/pizzarias/${pizzariaId}`).then(r => r.json()),
+      fetch(`${API}/cupons?pizzariaId=${pizzariaId}`, {
+        headers: { Authorization: `Bearer ${token}` }
+      }).then(r => r.json()),
+    ]).then(([pizzariaData, cuponsData]) => {
+      setDados({
+        nome:      pizzariaData.nome      || '',
+        descricao: pizzariaData.descricao || '',
+        telefone:  pizzariaData.telefone  || '',
+        email:     pizzariaData.email     || '',
+        banner:    pizzariaData.banner    || '',
+        logo:      pizzariaData.logo      || '',
+        endereco: {
+          rua:         pizzariaData.endereco?.rua         || '',
+          numero:      pizzariaData.endereco?.numero      || '',
+          complemento: pizzariaData.endereco?.complemento || '',
+          bairro:      pizzariaData.endereco?.bairro      || '',
+          cidade:      pizzariaData.endereco?.cidade      || '',
+          estado:      pizzariaData.endereco?.estado      || '',
+          cep:         pizzariaData.endereco?.cep         || '',
+        },
+        horarios: {
+          abertura:   pizzariaData.horarios?.abertura   || '18:00',
+          fechamento: pizzariaData.horarios?.fechamento || '23:00',
+        },
+        tempoMedioEntrega: pizzariaData.tempoMedioEntrega ?? 40,
+        taxaEntrega:       pizzariaData.taxaEntrega       ?? 0,
+      });
+      if (Array.isArray(cuponsData)) setCupons(cuponsData);
+    })
+    .catch(() => setErro('Erro ao carregar dados'))
+    .finally(() => setLoading(false));
   }, [pizzariaId]);
 
   function handle(e) {
@@ -71,12 +97,11 @@ export default function PerfilPizzaria() {
   }
 
   async function handleCep(e) {
-    const cep = e.target.value.replace(/\D/g, '');
-    setDados(p => ({ ...p, endereco: { ...p.endereco, cep: e.target.value } }));
+    const raw = e.target.value;
+    const cep = raw.replace(/\D/g, '');
+    setDados(p => ({ ...p, endereco: { ...p.endereco, cep: raw } }));
     setErroCep(null);
-
     if (cep.length !== 8) return;
-
     setBuscandoCep(true);
     try {
       const res  = await fetch(`https://viacep.com.br/ws/${cep}/json/`);
@@ -84,49 +109,70 @@ export default function PerfilPizzaria() {
       if (data.erro) { setErroCep('CEP não encontrado'); return; }
       setDados(p => ({
         ...p,
-        endereco: {
-          ...p.endereco,
-          cep:    e.target.value,
-          rua:    data.logradouro || '',
-          bairro: data.bairro     || '',
-          cidade: data.localidade || '',
-          estado: data.uf         || '',
-        },
+        endereco: { ...p.endereco, cep: raw, rua: data.logradouro || '', bairro: data.bairro || '', cidade: data.localidade || '', estado: data.uf || '' },
       }));
-    } catch {
-      setErroCep('Erro ao buscar CEP');
-    } finally {
-      setBuscandoCep(false);
-    }
+    } catch { setErroCep('Erro ao buscar CEP'); }
+    finally   { setBuscandoCep(false); }
   }
 
   async function salvar() {
-    setSalvando(true);
-    setSucesso(false);
-    setErro(null);
+    setSalvando(true); setSucesso(false); setErro(null);
     const token = localStorage.getItem('token');
     try {
       const res  = await fetch(`${API}/pizzarias/${pizzariaId}`, {
-        method:  'PATCH',
+        method: 'PATCH',
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-        body:    JSON.stringify(dados),
+        body:   JSON.stringify(dados),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.erro || 'Erro ao salvar');
       setSucesso(true);
       setTimeout(() => setSucesso(false), 3000);
-    } catch (err) {
-      setErro(err.message);
-    } finally {
-      setSalvando(false);
-    }
+    } catch (err) { setErro(err.message); }
+    finally       { setSalvando(false); }
+  }
+
+  async function criarCupom() {
+    if (!novoCupom.codigo.trim()) { setErroCupom('Informe o código'); return; }
+    if (novoCupom.tipo !== 'frete_gratis' && !novoCupom.valor) { setErroCupom('Informe o valor'); return; }
+    setSalvandoCupom(true); setErroCupom(null);
+    const token = localStorage.getItem('token');
+    try {
+      const res  = await fetch(`${API}/cupons`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body:   JSON.stringify({ ...novoCupom, valor: Number(novoCupom.valor) || 0, pizzariaId }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.erro || 'Erro ao criar cupom');
+      setCupons(prev => [data, ...prev]);
+      setNovoCupom(CUPOM_VAZIO);
+    } catch (err) { setErroCupom(err.message); }
+    finally       { setSalvandoCupom(false); }
+  }
+
+  async function toggleCupom(id) {
+    const token = localStorage.getItem('token');
+    try {
+      const res  = await fetch(`${API}/cupons/${id}/toggle`, { method: 'PATCH', headers: { Authorization: `Bearer ${token}` } });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.erro);
+      setCupons(prev => prev.map(c => c._id === id ? data : c));
+    } catch (err) { alert(err.message); }
+  }
+
+  async function deletarCupom(id) {
+    setDeletandoCupom(id);
+    const token = localStorage.getItem('token');
+    try {
+      await fetch(`${API}/cupons/${id}`, { method: 'DELETE', headers: { Authorization: `Bearer ${token}` } });
+      setCupons(prev => prev.filter(c => c._id !== id));
+    } catch (err) { alert(err.message); }
+    finally       { setDeletandoCupom(null); }
   }
 
   if (loading) return (
-    <div className="perfil-loading">
-      <div className="perfil-spinner" />
-      <p>Carregando...</p>
-    </div>
+    <div className="perfil-loading"><div className="perfil-spinner" /><p>Carregando...</p></div>
   );
 
   return (
@@ -148,6 +194,7 @@ export default function PerfilPizzaria() {
 
       <div className="perfil-layout">
 
+        {/* Identidade */}
         <section className="perfil-secao">
           <div className="perfil-secao-titulo">🍕 Identidade</div>
           <div className="perfil-grid">
@@ -172,6 +219,7 @@ export default function PerfilPizzaria() {
           </div>
         </section>
 
+        {/* Contato */}
         <section className="perfil-secao">
           <div className="perfil-secao-titulo">📞 Contato</div>
           <div className="perfil-grid">
@@ -186,26 +234,18 @@ export default function PerfilPizzaria() {
           </div>
         </section>
 
+        {/* Endereço */}
         <section className="perfil-secao">
           <div className="perfil-secao-titulo">📍 Endereço</div>
           <div className="perfil-grid">
-
-            {/* CEP com busca automática */}
             <div className="perfil-campo">
               <label>
                 CEP
                 {buscandoCep && <span className="perfil-cep-status"> 🔍 Buscando...</span>}
                 {erroCep     && <span className="perfil-cep-status erro"> ⚠️ {erroCep}</span>}
               </label>
-              <input
-                name="endereco.cep"
-                value={dados.endereco.cep}
-                onChange={handleCep}
-                placeholder="00000-000"
-                maxLength={9}
-              />
+              <input name="endereco.cep" value={dados.endereco.cep} onChange={handleCep} placeholder="00000-000" maxLength={9} />
             </div>
-
             <div className="perfil-campo">
               <label>Número</label>
               <input name="endereco.numero" value={dados.endereco.numero} onChange={handle} placeholder="123" />
@@ -233,8 +273,9 @@ export default function PerfilPizzaria() {
           </div>
         </section>
 
+        {/* Horários e Entrega */}
         <section className="perfil-secao">
-          <div className="perfil-secao-titulo">🕐 Horário de funcionamento</div>
+          <div className="perfil-secao-titulo">🕐 Funcionamento & Entrega</div>
           <div className="perfil-grid">
             <div className="perfil-campo">
               <label>Abertura</label>
@@ -244,24 +285,102 @@ export default function PerfilPizzaria() {
               <label>Fechamento</label>
               <input name="horarios.fechamento" type="time" value={dados.horarios.fechamento} onChange={handle} />
             </div>
-          </div>
-          <div className="perfil-grid" style={{ marginTop: 12 }}>
             <div className="perfil-campo">
               <label>Tempo médio de entrega (min)</label>
-              <input
-                name="tempoMedioEntrega"
-                type="number" min="10" max="120"
+              <input name="tempoMedioEntrega" type="number" min="10" max="120"
                 value={dados.tempoMedioEntrega}
                 onChange={e => setDados(p => ({ ...p, tempoMedioEntrega: Number(e.target.value) }))}
-                placeholder="Ex: 40"
-              />
+                placeholder="Ex: 40" />
             </div>
-            <div className="perfil-campo" style={{ justifyContent: 'flex-end', paddingBottom: 2 }}>
-              <span style={{ fontSize: '0.78rem', color: '#aaa', marginTop: 'auto' }}>
-                Exibido como "🕐 {dados.tempoMedioEntrega} min" no cardápio
+            <div className="perfil-campo">
+              <label>Taxa de entrega (R$)</label>
+              <input name="taxaEntrega" type="number" min="0" step="0.50"
+                value={dados.taxaEntrega}
+                onChange={e => setDados(p => ({ ...p, taxaEntrega: Number(e.target.value) }))}
+                placeholder="Ex: 5,00" />
+              <span className="perfil-campo-hint">
+                {dados.taxaEntrega === 0 ? 'Entrega grátis' : `Cobrado ${formatarPreco(dados.taxaEntrega)} por entrega`}
               </span>
             </div>
           </div>
+        </section>
+
+        {/* Cupons */}
+        <section className="perfil-secao">
+          <div className="perfil-secao-titulo">🎟️ Cupons de desconto</div>
+
+          {/* Formulário novo cupom */}
+          <div className="cupom-form">
+            <div className="cupom-form-row">
+              <div className="perfil-campo" style={{ flex: 2 }}>
+                <label>Código</label>
+                <input
+                  value={novoCupom.codigo}
+                  onChange={e => setNovoCupom(p => ({ ...p, codigo: e.target.value.toUpperCase() }))}
+                  placeholder="Ex: PROMO10"
+                  maxLength={20}
+                />
+              </div>
+              <div className="perfil-campo" style={{ flex: 2 }}>
+                <label>Tipo</label>
+                <select value={novoCupom.tipo} onChange={e => setNovoCupom(p => ({ ...p, tipo: e.target.value, valor: '' }))}>
+                  <option value="percentual">Porcentagem (% off)</option>
+                  <option value="fixo">Valor fixo (R$ off)</option>
+                  <option value="frete_gratis">Frete grátis</option>
+                </select>
+              </div>
+              {novoCupom.tipo !== 'frete_gratis' && (
+                <div className="perfil-campo" style={{ flex: 1 }}>
+                  <label>{novoCupom.tipo === 'percentual' ? 'Percentual (%)' : 'Valor (R$)'}</label>
+                  <input
+                    type="number" min="0" step={novoCupom.tipo === 'percentual' ? '1' : '0.50'}
+                    value={novoCupom.valor}
+                    onChange={e => setNovoCupom(p => ({ ...p, valor: e.target.value }))}
+                    placeholder={novoCupom.tipo === 'percentual' ? '10' : '5,00'}
+                  />
+                </div>
+              )}
+              <div className="perfil-campo" style={{ justifyContent: 'flex-end' }}>
+                <button className="cupom-btn-criar" onClick={criarCupom} disabled={salvandoCupom}>
+                  {salvandoCupom ? '⏳' : '+ Criar'}
+                </button>
+              </div>
+            </div>
+            {erroCupom && <div className="cupom-erro">⚠️ {erroCupom}</div>}
+          </div>
+
+          {/* Lista de cupons */}
+          {cupons.length === 0 ? (
+            <p className="perfil-campo-hint" style={{ marginTop: 8 }}>Nenhum cupom cadastrado ainda.</p>
+          ) : (
+            <div className="cupons-lista">
+              {cupons.map(c => (
+                <div key={c._id} className={`cupom-item ${c.ativo ? 'ativo' : 'inativo'}`}>
+                  <div className="cupom-item-codigo">{c.codigo}</div>
+                  <div className="cupom-item-desc">
+                    {c.tipo === 'frete_gratis' ? 'Frete grátis' :
+                     c.tipo === 'percentual'   ? `${c.valor}% off` :
+                                                 `${formatarPreco(c.valor)} off`}
+                  </div>
+                  <div className="cupom-item-acoes">
+                    <button
+                      className={`cupom-toggle ${c.ativo ? 'desativar' : 'ativar'}`}
+                      onClick={() => toggleCupom(c._id)}
+                    >
+                      {c.ativo ? 'Desativar' : 'Ativar'}
+                    </button>
+                    <button
+                      className="cupom-deletar"
+                      onClick={() => deletarCupom(c._id)}
+                      disabled={deletandoCupom === c._id}
+                    >
+                      {deletandoCupom === c._id ? '⏳' : '🗑️'}
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
         </section>
 
       </div>

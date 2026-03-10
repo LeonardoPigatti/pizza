@@ -26,7 +26,8 @@ const PizzariaSchema = new mongoose.Schema({
   avaliacaoMedia: { type: Number, default: 0 },
   avaliacaoTotal: { type: Number, default: 0 },
   avaliacaoCount: { type: Number, default: 0 },
-  status: { type: String, enum: ['open', 'closed'], default: 'open' },
+  status:       { type: String, enum: ['open', 'closed'], default: 'open' },
+  taxaEntrega:  { type: Number, default: 0 },
 }, { timestamps: true });
 
 module.exports = mongoose.model('Pizzaria', PizzariaSchema);
