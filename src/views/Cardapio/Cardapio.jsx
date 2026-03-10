@@ -2,7 +2,7 @@ import { useState, useEffect, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import './Cardapio.css';
 import ModalPizza from '../Modal/Modalpizza.jsx';
-import ModalProduto from '../Modal/Modalproduto.jsx';
+import ModalProduto from '../Modal/ModalProduto.jsx';
 import Carrinho, { CarrinhoFAB } from '../Carrinho/Carrinho.jsx';
 import { useCarrinho } from '../Carrinho/useCarrinho.js';
 
@@ -27,6 +27,12 @@ function ProdutoCard({ produto, onEscolher }) {
       }
       <div className="produto-body">
         <h3 className="produto-nome">{produto.nome}</h3>
+        <div className="produto-tags">
+          {produto.categoria && <span className="produto-tag categoria">{produto.categoria}</span>}
+          {produto.subcategorias?.map(s => (
+            <span key={s} className="produto-tag">{s}</span>
+          ))}
+        </div>
         <p className="produto-descricao">{produto.descricao}</p>
         <div className="produto-footer">
           <div>
@@ -48,14 +54,14 @@ export default function Cardapio() {
   const { pizzariaId } = useParams();
   const navigate = useNavigate();
 
-  const [pizzaria, setPizzaria]         = useState(null);
-  const [produtos, setProdutos]         = useState([]);
-  const [loading, setLoading]           = useState(true);
-  const [erro, setErro]                 = useState(null);
+  const [pizzaria, setPizzaria]               = useState(null);
+  const [produtos, setProdutos]               = useState([]);
+  const [loading, setLoading]                 = useState(true);
+  const [erro, setErro]                       = useState(null);
   const [categoriaAtiva, setCategoriaAtiva]   = useState('Todas');
   const [subcatAtiva, setSubcatAtiva]         = useState('Todas');
-  const [busca, setBusca]               = useState('');
-  const [modalProduto, setModalProduto] = useState(null);
+  const [busca, setBusca]                     = useState('');
+  const [modalProduto, setModalProduto]       = useState(null);
   const [carrinhoAberto, setCarrinhoAberto]   = useState(false);
 
   const { itens, totalItens, subtotal, adicionarItem, alterarQuantidade, removerItem } = useCarrinho();
@@ -83,13 +89,11 @@ export default function Cardapio() {
     carregar();
   }, [pizzariaId]);
 
-  // Categorias únicas
   const categorias = useMemo(() => {
     const cats = [...new Set(produtos.map(p => p.categoria).filter(Boolean))];
     return ['Todas', ...cats];
   }, [produtos]);
 
-  // Subcategorias da categoria ativa
   const subcategorias = useMemo(() => {
     if (categoriaAtiva === 'Todas') return [];
     const subs = produtos
@@ -98,7 +102,6 @@ export default function Cardapio() {
     return [...new Set(subs)];
   }, [produtos, categoriaAtiva]);
 
-  // Produtos filtrados
   const produtosFiltrados = useMemo(() => {
     return produtos.filter(p => {
       const porCategoria = categoriaAtiva === 'Todas' || p.categoria === categoriaAtiva;
@@ -145,11 +148,13 @@ export default function Cardapio() {
             <h1 className="banner-nome">{pizzaria?.nome || 'Cardápio'}</h1>
             {pizzaria?.descricao && <p className="banner-slogan">{pizzaria.descricao}</p>}
             <div className="banner-infos">
-              <span className="banner-info">⭐ {pizzaria?.avaliacaoMedia?.toFixed(1) || '—'}</span>
-              <span className="banner-info">🕐Tempo de Espera: {pizzaria?.tempoMedioEntrega || 40} min</span>
+              {pizzaria?.avaliacaoMedia > 0 && (
+                <span className="banner-info">⭐ {pizzaria.avaliacaoMedia.toFixed(1)}</span>
+              )}
+              <span className="banner-info">🕐 {pizzaria?.tempoMedioEntrega || 40} min</span>
               {enderecoTexto && <span className="banner-info">📍 {enderecoTexto}</span>}
               {pizzaria?.horarios?.abertura && (
-                <span className="banner-info">🕒Horario De Funcionamento: {pizzaria.horarios.abertura} – {pizzaria.horarios.fechamento}</span>
+                <span className="banner-info">🕒 {pizzaria.horarios.abertura} – {pizzaria.horarios.fechamento}</span>
               )}
             </div>
           </div>
@@ -177,11 +182,11 @@ export default function Cardapio() {
               onClick={() => handleCategoriaAtiva(cat)}
             >
               {cat}
-              {cat !== 'Todas' && (
-                <span className="cat-count">
-                  {produtos.filter(p => p.categoria === cat).length}
-                </span>
-              )}
+              <span className="cat-count">
+                {cat === 'Todas'
+                  ? produtos.length
+                  : produtos.filter(p => p.categoria === cat).length}
+              </span>
             </button>
           ))}
         </div>
@@ -224,7 +229,6 @@ export default function Cardapio() {
         </div>
       </div>
 
-      {/* Modal — pizza tem sabores/tamanhos, outros têm preço único */}
       {modalProduto && modalProduto.temSabores && (
         <ModalPizza
           produto={modalProduto}
