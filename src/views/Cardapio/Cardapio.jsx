@@ -65,6 +65,7 @@ export default function Cardapio() {
 
   // Modal: { produto, itemEditando | null }
   const [modalAberto, setModalAberto] = useState(null);
+  const lojaFechada = pizzaria?.status === 'closed';
 
   const { itens, totalItens, subtotal, adicionarItem, alterarQuantidade, editarItem, removerItem } = useCarrinho();
 
@@ -122,6 +123,7 @@ export default function Cardapio() {
 
   // Abre modal para ADICIONAR novo item
   function handleEscolher(produto) {
+    if (lojaFechada) return;
     setModalAberto({ produto, itemEditando: null });
   }
 
@@ -164,7 +166,18 @@ export default function Cardapio() {
     ? `${endereco.rua}, ${endereco.numero} - ${endereco.bairro}` : null;
 
   return (
-    <div>
+    <div className={lojaFechada ? 'cardapio-fechado' : ''}>
+      {lojaFechada && (
+        <div className="loja-fechada-overlay">
+          <div className="loja-fechada-card">
+            <div className="loja-fechada-icone">🔒</div>
+            <div className="loja-fechada-titulo">Loja fechada</div>
+            <div className="loja-fechada-desc">
+              No momento não estamos aceitando pedidos.<br />Volte mais tarde!
+            </div>
+          </div>
+        </div>
+      )}
       {/* Banner */}
       <div className="banner">
         <img className="banner-img"
@@ -178,10 +191,10 @@ export default function Cardapio() {
               {pizzaria?.avaliacaoMedia > 0 && (
                 <span className="banner-info">⭐ {pizzaria.avaliacaoMedia.toFixed(1)}</span>
               )}
-              <span className="banner-info">⏰ Tempo de Espera: {pizzaria?.tempoMedioEntrega || 40} min</span>
+              <span className="banner-info">🕐 {pizzaria?.tempoMedioEntrega || 40} min</span>
               {enderecoTexto && <span className="banner-info">📍 {enderecoTexto}</span>}
               {pizzaria?.horarios?.abertura && (
-                <span className="banner-info">🕒 Horario De Funcionamento: {pizzaria.horarios.abertura} – {pizzaria.horarios.fechamento}</span>
+                <span className="banner-info">🕒 {pizzaria.horarios.abertura} – {pizzaria.horarios.fechamento}</span>
               )}
             </div>
           </div>
@@ -263,7 +276,7 @@ export default function Cardapio() {
         />
       )}
 
-      <CarrinhoFAB totalItens={totalItens} onClick={() => setCarrinhoAberto(true)} />
+      {!lojaFechada && <CarrinhoFAB totalItens={totalItens} onClick={() => setCarrinhoAberto(true)} />}
       {carrinhoAberto && (
         <Carrinho
           itens={itens}

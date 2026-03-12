@@ -270,3 +270,69 @@ body {
   .cardapio-container { padding: 20px 16px 80px; }
 }
 @media (max-width: 480px) { .produtos-grid { grid-template-columns: 1fr; } }
+
+/* ── Loja fechada ── */
+.cardapio-fechado {
+  position: relative;
+  pointer-events: none;
+  user-select: none;
+}
+
+/* Permite rolar mas bloqueia interações */
+.cardapio-fechado * {
+  pointer-events: none !important;
+}
+
+/* Filtro cinza em todo o conteúdo */
+.cardapio-fechado .banner,
+.cardapio-fechado .busca-wrapper,
+.cardapio-fechado .categorias-bar-wrapper,
+.cardapio-fechado .subcategorias-bar-wrapper,
+.cardapio-fechado .cardapio-container {
+  filter: grayscale(1) opacity(0.45);
+}
+
+/* Overlay fixo com card central */
+.loja-fechada-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 800;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: all !important;
+  background: rgba(240, 240, 240, 0.55);
+  backdrop-filter: blur(3px);
+}
+
+.loja-fechada-card {
+  background: #fff;
+  border-radius: 20px;
+  padding: 40px 48px;
+  text-align: center;
+  box-shadow: 0 8px 40px rgba(0, 0, 0, 0.12);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  max-width: 320px;
+  width: 90%;
+}
+
+.loja-fechada-icone {
+  font-size: 3rem;
+  filter: grayscale(1);
+  margin-bottom: 4px;
+}
+
+.loja-fechada-titulo {
+  font-size: 1.25rem;
+  font-weight: 800;
+  color: #333;
+}
+
+.loja-fechada-desc {
+  font-size: 0.88rem;
+  color: #999;
+  line-height: 1.6;
+}
