@@ -29,12 +29,14 @@ function calcularTotalItem(pizza) {
   return (preco + adicionais) * (pizza.quantidade || 1);
 }
 function calcularTotalPedido(pedido, taxaEntregaLoja) {
-  const subtotal    = pedido.pizzas.reduce((s, p) => s + calcularTotalItem(p), 0);
-  const freteGratis = pedido.cupom?.tipo === 'frete_gratis';
-  const taxa        = pedido.tipoEntrega === 'Retirada' || freteGratis
+  const subtotal = pedido.pizzas.reduce((s, p) => s + calcularTotalItem(p), 0);
+  // suporta tanto cupons[] (novo) quanto cupom{} (legado)
+  const cupons   = pedido.cupons?.length > 0 ? pedido.cupons : (pedido.cupom ? [pedido.cupom] : []);
+  const freteGratis = cupons.some(c => c.tipo === 'frete_gratis');
+  const taxa     = pedido.tipoEntrega === 'Retirada' || freteGratis
     ? 0
     : Number(pedido.taxaEntrega ?? taxaEntregaLoja ?? 0);
-  const desconto    = Number(pedido.cupom?.desconto || 0);
+  const desconto = cupons.reduce((s, c) => s + Number(c.desconto || 0), 0);
   return Math.max(0, subtotal + taxa - desconto);
 }
 
@@ -419,11 +421,12 @@ export default function Dashboard() {
         <div className="pedidos-lista">
           {!loading && !erro && pedidosFiltrados.map(pedido => {
             const subtotal    = pedido.pizzas.reduce((s, p) => s + calcularTotalItem(p), 0);
-            const freteGratis = pedido.cupom?.tipo === 'frete_gratis';
+            const cupons      = pedido.cupons?.length > 0 ? pedido.cupons : (pedido.cupom ? [pedido.cupom] : []);
+            const freteGratis = cupons.some(c => c.tipo === 'frete_gratis');
             const taxaEfetiva = pedido.tipoEntrega === 'Retirada' || freteGratis
               ? 0
               : Number(pedido.taxaEntrega ?? taxaEntrega ?? 0);
-            const desconto    = Number(pedido.cupom?.desconto || 0);
+            const desconto    = cupons.reduce((s, c) => s + Number(c.desconto || 0), 0);
             const total       = Math.max(0, subtotal + taxaEfetiva - desconto);
 
             return (
@@ -477,17 +480,16 @@ export default function Dashboard() {
                         </div>
                       )}
 
-                      {desconto > 0 && (
-                        <div style={{ fontSize: '0.75rem', color: '#27ae60', fontWeight: 'bold' }}>
-                          Cupom {pedido.cupom.codigo}: - {formatarPreco(desconto)}
+                      {cupons.filter(c => c.tipo !== 'frete_gratis' && c.desconto > 0).map((c, i) => (
+                        <div key={i} style={{ fontSize: '0.75rem', color: '#27ae60', fontWeight: 'bold' }}>
+                          {c.codigo}: − {formatarPreco(c.desconto)}
                         </div>
-                      )}
-
-                      {freteGratis && (
-                        <div style={{ fontSize: '0.75rem', color: '#27ae60', fontWeight: 'bold' }}>
-                          Cupom {pedido.cupom.codigo}: frete grátis
+                      ))}
+                      {cupons.filter(c => c.tipo === 'frete_gratis').map((c, i) => (
+                        <div key={i} style={{ fontSize: '0.75rem', color: '#27ae60', fontWeight: 'bold' }}>
+                          {c.codigo}: frete grátis
                         </div>
-                      )}
+                      ))}
 
                       <div style={{ fontSize: '1.1rem', fontWeight: 800, color: '#e03c1f', marginTop: 4 }}>
                         Total: {formatarPreco(total)}

@@ -20,10 +20,11 @@ export default function Checkout({ itens, subtotal, pizzariaId, onPedidoConfirma
 
   const [step, setStep]                     = useState(0);
   const [tipoEntrega, setTipoEntrega]       = useState('entrega');
-  const [cupom, setCupom]                   = useState('');
-  const [cupomStatus, setCupomStatus]       = useState(null);
-  const [cupomAplicado, setCupomAplicado]   = useState(null);
-  const [validandoCupom, setValidandoCupom] = useState(false);
+  const [cupom, setCupom]                     = useState('');
+  const [cupomStatus, setCupomStatus]         = useState(null); // 'ok' | 'erro' | 'acumulavel_erro'
+  const [cupomMensagem, setCupomMensagem]     = useState('');
+  const [cuponsAplicados, setCuponsAplicados] = useState([]);
+  const [validandoCupom, setValidandoCupom]   = useState(false);
   const [pagamento, setPagamento]           = useState('online');
   const [troco, setTroco]                   = useState('');
   const [salvando, setSalvando]             = useState(false);
@@ -54,22 +55,24 @@ export default function Checkout({ itens, subtotal, pizzariaId, onPedidoConfirma
   }, [pizzariaId]);
 
   // ── Cálculos ──
-  const freteGratis = cupomAplicado?.tipo === 'frete_gratis';
+  const freteGratis = cuponsAplicados.some(c => c.tipo === 'frete_gratis');
   const taxaEntrega = tipoEntrega === 'retirada' || freteGratis ? 0 : taxaEntregaBase;
 
   let desconto = 0;
-  if (cupomAplicado?.tipo === 'percentual') desconto = subtotal * (cupomAplicado.valor / 100);
-  if (cupomAplicado?.tipo === 'fixo')       desconto = Math.min(cupomAplicado.valor, subtotal);
+  cuponsAplicados.forEach(c => {
+    if (c.tipo === 'percentual') desconto += subtotal * (c.valor / 100);
+    if (c.tipo === 'fixo')       desconto += c.valor;
+  });
+  desconto = Math.min(desconto, subtotal);
 
   const total         = Math.max(0, subtotal - desconto + taxaEntrega);
   const tempoEntrega  = `${tempoEntregaBase}–${tempoEntregaBase + 10} min`;
   const tempoEstimado = tipoEntrega === 'retirada' ? TEMPO_RETIRADA : tempoEntrega;
 
-  function labelCupom() {
-    if (!cupomAplicado) return '';
-    if (cupomAplicado.tipo === 'frete_gratis') return 'Frete grátis!';
-    if (cupomAplicado.tipo === 'percentual')   return `${cupomAplicado.valor}% de desconto!`;
-    if (cupomAplicado.tipo === 'fixo')         return `${formatarPreco(cupomAplicado.valor)} de desconto!`;
+  function labelCupom(c) {
+    if (c.tipo === 'frete_gratis') return 'Frete grátis';
+    if (c.tipo === 'percentual')   return `${c.valor}% off`;
+    if (c.tipo === 'fixo')         return `− ${formatarPreco(c.valor)}`;
     return '';
   }
 
@@ -90,23 +93,54 @@ export default function Checkout({ itens, subtotal, pizzariaId, onPedidoConfirma
   async function aplicarCupom() {
     const codigo = cupom.trim().toUpperCase();
     if (!codigo) return;
+
+    // Evita duplicata
+    if (cuponsAplicados.some(c => c.codigo === codigo)) {
+      setCupomStatus('erro');
+      setCupomMensagem('Este cupom já foi aplicado.');
+      return;
+    }
+
     setValidandoCupom(true);
     setCupomStatus(null);
+    setCupomMensagem('');
     try {
-      // Tenta pegar pizzariaId dos itens como fallback
-      const pid = pizzariaId || itens[0]?.pizzariaId;
+      const pid  = pizzariaId || itens[0]?.pizzariaId;
       const res  = await fetch(`${API}/cupons/validar?codigo=${codigo}&pizzariaId=${pid}`);
       const data = await res.json();
       if (!res.ok) throw new Error(data.erro || 'Cupom inválido');
-      // data = { _id, codigo, tipo, valor, ativo, pizzariaId }
-      setCupomAplicado(data);
+
+      // Verifica acumulação
+      if (cuponsAplicados.length > 0) {
+        if (!data.acumulavel) {
+          setCupomStatus('erro');
+          setCupomMensagem(`O cupom ${data.codigo} não pode ser acumulado com outros.`);
+          return;
+        }
+        const bloqueador = cuponsAplicados.find(c => !c.acumulavel);
+        if (bloqueador) {
+          setCupomStatus('erro');
+          setCupomMensagem(`O cupom ${bloqueador.codigo} já aplicado não permite acumulação.`);
+          return;
+        }
+      }
+
+      setCuponsAplicados(prev => [...prev, data]);
       setCupomStatus('ok');
-    } catch {
-      setCupomAplicado(null);
+      setCupomMensagem(labelCupom(data));
+      setCupom('');
+    } catch (err) {
       setCupomStatus('erro');
+      setCupomMensagem(err.message || 'Cupom inválido ou inativo.');
     } finally {
       setValidandoCupom(false);
     }
+  }
+
+  function removerCupom(codigo) {
+    setCuponsAplicados(prev => prev.filter(c => c.codigo !== codigo));
+    setCupomStatus(null);
+    setCupomMensagem('');
   }
 
   function handleDados(e) {
@@ -151,13 +185,15 @@ export default function Checkout({ itens, subtotal, pizzariaId, onPedidoConfirma
         bairro: dados.bairro, cep: dados.cep,
       } : null,
       contato:  { nome: dados.nome, telefone: dados.telefone },
-      cupom: cupomAplicado ? {
-        codigo:      cupomAplicado.codigo,
-        tipo:        cupomAplicado.tipo,
-        desconto,
-        porcentagem: cupomAplicado.tipo === 'percentual' ? cupomAplicado.valor : 0,
+      cupons: cuponsAplicados.map(c => ({
+        codigo:      c.codigo,
+        tipo:        c.tipo,
+        desconto:    c.tipo === 'percentual' ? subtotal * (c.valor / 100)
+                   : c.tipo === 'fixo'       ? c.valor
+                   : 0,
+        porcentagem: c.tipo === 'percentual' ? c.valor : 0,
         valido:      true,
-      } : null,
+      })),
       pagamento:           PAGAMENTO_MAP[pagamento],
       statusPedido:        'Aguardando confirmacao',
       tempoEsperaEstimado: tipoEntrega === 'retirada' ? Math.round(tempoEntregaBase * 0.6) : tempoEntregaBase,
@@ -220,20 +256,34 @@ export default function Checkout({ itens, subtotal, pizzariaId, onPedidoConfirma
 
             <div className="checkout-card">
               <div className="checkout-card-titulo"><span>🏷️</span> Cupom de desconto</div>
+
+              {/* Cupons já aplicados */}
+              {cuponsAplicados.length > 0 && (
+                <div className="cupons-aplicados-lista">
+                  {cuponsAplicados.map(c => (
+                    <div key={c.codigo} className="cupom-aplicado-tag">
+                      <span>🏷️ {c.codigo} — {labelCupom(c)}</span>
+                      <button className="cupom-remover" onClick={() => removerCupom(c.codigo)}>✕</button>
+                    </div>
+                  ))}
+                </div>
+              )}
+
               <div className="cupom-wrapper">
                 <input
                   className={`cupom-input ${cupomStatus === 'ok' ? 'valido' : cupomStatus === 'erro' ? 'invalido' : ''}`}
-                  type="text" placeholder="Digite seu cupom"
+                  type="text"
+                  placeholder={cuponsAplicados.length > 0 ? 'Adicionar outro cupom...' : 'Digite seu cupom'}
                   value={cupom}
-                  onChange={e => { setCupom(e.target.value); setCupomStatus(null); setCupomAplicado(null); }}
+                  onChange={e => { setCupom(e.target.value); setCupomStatus(null); setCupomMensagem(''); }}
                   onKeyDown={e => e.key === 'Enter' && aplicarCupom()}
                 />
                 <button className="btn-aplicar-cupom" onClick={aplicarCupom} disabled={!cupom.trim() || validandoCupom}>
                   {validandoCupom ? '...' : 'Aplicar'}
                 </button>
               </div>
-              {cupomStatus === 'ok'   && <div className="cupom-feedback ok">✓ {labelCupom()}</div>}
-              {cupomStatus === 'erro' && <div className="cupom-feedback erro">✕ Cupom inválido ou inativo.</div>}
+              {cupomStatus === 'ok'   && <div className="cupom-feedback ok">✓ {cupomMensagem}</div>}
+              {cupomStatus === 'erro' && <div className="cupom-feedback erro">✕ {cupomMensagem || 'Cupom inválido ou inativo.'}</div>}
             </div>
           </>
         )}
@@ -365,17 +415,14 @@ export default function Checkout({ itens, subtotal, pizzariaId, onPedidoConfirma
             <div className="resumo-linha">
               <span>Subtotal</span><span>{formatarPreco(subtotal)}</span>
             </div>
-            {desconto > 0 && (
-              <div className="resumo-linha desconto">
-                <span>Desconto ({labelCupom()})</span>
-                <span>− {formatarPreco(desconto)}</span>
+            {cuponsAplicados.map(c => (
+              <div key={c.codigo} className="resumo-linha desconto">
+                <span>{c.codigo} — {labelCupom(c)}</span>
+                {c.tipo !== 'frete_gratis' && (
+                  <span>− {formatarPreco(c.tipo === 'percentual' ? subtotal * (c.valor/100) : c.valor)}</span>
+                )}
               </div>
-            )}
-            {freteGratis && (
-              <div className="resumo-linha desconto">
-                <span>Frete grátis (cupom)</span><span>✓</span>
-              </div>
-            )}
+            ))}
             <div className="resumo-linha">
               <span>Taxa de entrega</span>
               <span>{taxaEntrega === 0 ? 'Grátis' : formatarPreco(taxaEntrega)}</span>

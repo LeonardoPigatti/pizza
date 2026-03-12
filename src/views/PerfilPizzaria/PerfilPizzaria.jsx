@@ -12,47 +12,36 @@ const VAZIO = {
   taxaEntrega: 0,
 };
 
-const CUPOM_VAZIO = { codigo: '', tipo: 'percentual', valor: '' };
+const CUPOM_VAZIO = { codigo: '', tipo: 'percentual', valor: '', acumulavel: false };
 
 function formatarPreco(v) {
   return `R$ ${Number(v).toFixed(2).replace('.', ',')}`;
-}
-
-function labelTipo(tipo) {
-  if (tipo === 'percentual')   return '% off';
-  if (tipo === 'fixo')         return 'R$ off';
-  if (tipo === 'frete_gratis') return 'Frete grátis';
-  return tipo;
 }
 
 export default function PerfilPizzaria() {
   const { pizzariaId } = useParams();
   const navigate       = useNavigate();
 
-  const [dados, setDados]           = useState(VAZIO);
-  const [loading, setLoading]       = useState(true);
-  const [salvando, setSalvando]     = useState(false);
-  const [sucesso, setSucesso]       = useState(false);
-  const [erro, setErro]             = useState(null);
+  const [dados, setDados]             = useState(VAZIO);
+  const [loading, setLoading]         = useState(true);
+  const [salvando, setSalvando]       = useState(false);
+  const [sucesso, setSucesso]         = useState(false);
+  const [erro, setErro]               = useState(null);
   const [buscandoCep, setBuscandoCep] = useState(false);
-  const [erroCep, setErroCep]       = useState(null);
+  const [erroCep, setErroCep]         = useState(null);
 
-  // Cupons
-  const [cupons, setCupons]         = useState([]);
-  const [novoCupom, setNovoCupom]   = useState(CUPOM_VAZIO);
+  const [cupons, setCupons]               = useState([]);
+  const [novoCupom, setNovoCupom]         = useState(CUPOM_VAZIO);
   const [salvandoCupom, setSalvandoCupom] = useState(false);
-  const [erroCupom, setErroCupom]   = useState(null);
+  const [erroCupom, setErroCupom]         = useState(null);
   const [deletandoCupom, setDeletandoCupom] = useState(null);
 
   useEffect(() => {
     const token = localStorage.getItem('token');
     if (!token) { navigate('/login'); return; }
-
     Promise.all([
       fetch(`${API}/pizzarias/${pizzariaId}`).then(r => r.json()),
-      fetch(`${API}/cupons?pizzariaId=${pizzariaId}`, {
-        headers: { Authorization: `Bearer ${token}` }
-      }).then(r => r.json()),
+      fetch(`${API}/cupons?pizzariaId=${pizzariaId}`, { headers: { Authorization: `Bearer ${token}` } }).then(r => r.json()),
     ]).then(([pizzariaData, cuponsData]) => {
       setDados({
         nome:      pizzariaData.nome      || '',
@@ -309,7 +298,6 @@ export default function PerfilPizzaria() {
         <section className="perfil-secao">
           <div className="perfil-secao-titulo">🎟️ Cupons de desconto</div>
 
-          {/* Formulário novo cupom */}
           <div className="cupom-form">
             <div className="cupom-form-row">
               <div className="perfil-campo" style={{ flex: 2 }}>
@@ -346,10 +334,27 @@ export default function PerfilPizzaria() {
                 </button>
               </div>
             </div>
+
+            {/* Checkbox acumulável */}
+            <label className="cupom-acumulavel-label">
+              <input
+                type="checkbox"
+                checked={novoCupom.acumulavel}
+                onChange={e => setNovoCupom(p => ({ ...p, acumulavel: e.target.checked }))}
+              />
+              <span>
+                Permitir acumular com outros cupons
+                <span className="cupom-acumulavel-hint">
+                  {novoCupom.acumulavel
+                    ? ' — o cliente poderá usar este junto com outros cupons acumuláveis'
+                    : ' — este cupom não poderá ser combinado com outros'}
+                </span>
+              </span>
+            </label>
+
             {erroCupom && <div className="cupom-erro">⚠️ {erroCupom}</div>}
           </div>
 
-          {/* Lista de cupons */}
           {cupons.length === 0 ? (
             <p className="perfil-campo-hint" style={{ marginTop: 8 }}>Nenhum cupom cadastrado ainda.</p>
           ) : (
@@ -361,19 +366,17 @@ export default function PerfilPizzaria() {
                     {c.tipo === 'frete_gratis' ? 'Frete grátis' :
                      c.tipo === 'percentual'   ? `${c.valor}% off` :
                                                  `${formatarPreco(c.valor)} off`}
+                    {c.acumulavel && (
+                      <span className="cupom-badge-acumulavel" title="Pode ser acumulado com outros cupons">
+                        🔗 acumulável
+                      </span>
+                    )}
                   </div>
                   <div className="cupom-item-acoes">
-                    <button
-                      className={`cupom-toggle ${c.ativo ? 'desativar' : 'ativar'}`}
-                      onClick={() => toggleCupom(c._id)}
-                    >
+                    <button className={`cupom-toggle ${c.ativo ? 'desativar' : 'ativar'}`} onClick={() => toggleCupom(c._id)}>
                       {c.ativo ? 'Desativar' : 'Ativar'}
                     </button>
-                    <button
-                      className="cupom-deletar"
-                      onClick={() => deletarCupom(c._id)}
-                      disabled={deletandoCupom === c._id}
-                    >
+                    <button className="cupom-deletar" onClick={() => deletarCupom(c._id)} disabled={deletandoCupom === c._id}>
                       {deletandoCupom === c._id ? '⏳' : '🗑️'}
                     </button>
                   </div>

@@ -54,7 +54,7 @@ const PedidoSchema = new mongoose.Schema({
   tipoEntrega:         { type: String, enum: ['Entrega', 'Retirada'], required: true },
   enderecoEntrega:     { type: EnderecoEntregaSchema, default: null },
   contato:             { type: ContatoSchema, required: true },
-  cupom:               { type: CupomSchema, default: null },
+  cupons:              { type: [CupomSchema], default: [] },
   pagamento:           { type: String, enum: ['Cartao online', 'Dinheiro na entrega'], required: true },
   statusPedido:        {
     type:    String,
