@@ -32,7 +32,17 @@ function calcularTotalItem(pizza) {
   return (preco + adicionais) * (pizza.quantidade || 1);
 }
 function calcularTotalPedido(pedido) {
-  return pedido.pizzas.reduce((s, p) => s + calcularTotalItem(p), 0);
+  // 1. Soma das pizzas
+  const subtotal = pedido.pizzas.reduce((s, p) => s + calcularTotalItem(p), 0);
+  
+  // 2. Busca a taxa de entrega (tenta no topo do objeto ou dentro do endereço)
+  // const taxaEntrega = Number(pedido.taxaEntrega || pedido.enderecoEntrega?.taxa || 0); ta mockado porque ainda não fixemos isso 
+  const taxaEntrega = 5.49;
+  // 3. Busca o desconto
+  const desconto = Number(pedido.cupom?.desconto || 0);
+  
+  // 4. Resultado final
+  return subtotal + taxaEntrega - desconto;
 }
 
 const STATUS_ORDEM = ['Aguardando confirmacao', 'Preparando', 'Saiu para entrega', 'Concluido'];
@@ -524,6 +534,29 @@ export default function Dashboard() {
                 </div>
 
                 <div className="pedido-card-direita">
+                  <div className="pedido-valores-detalhe" style={{ textAlign: 'right', marginBottom: 8, borderTop: '1px solid #eee', paddingTop: 8 }}>
+  
+  <div style={{ fontSize: '0.75rem', color: '#888' }}>
+    Subtotal: {formatarPreco(pedido.pizzas.reduce((s, p) => s + calcularTotalItem(p), 0))}
+  </div>
+
+  {/* Linha da Taxa de Entrega - Verifique se o nome do campo é este mesmo */}
+  {(5.49 > 0 || pedido.enderecoEntrega?.taxa > 0) && (
+    <div style={{ fontSize: '0.75rem', color: '#666' }}>
+      Entrega: R$ 05.49
+    </div>
+  )}
+
+  {pedido.cupom?.desconto > 0 && (
+    <div style={{ fontSize: '0.75rem', color: '#27ae60', fontWeight: 'bold' }}>
+      Cupom {pedido.cupom.codigo}: - {formatarPreco(pedido.cupom.desconto)}
+    </div>
+  )}
+
+  <div style={{ fontSize: '1.1rem', fontWeight: 800, color: '#e03c1f', marginTop: 4 }}>
+    Total: {formatarPreco(calcularTotalPedido(pedido))}
+  </div>
+</div>
                   <div className="pedido-contato">
                     <strong>{pedido.contato?.nome}</strong>
                     {pedido.contato?.telefone}

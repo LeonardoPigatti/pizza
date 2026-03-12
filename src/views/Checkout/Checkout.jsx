@@ -38,8 +38,10 @@ export default function Checkout({ itens, subtotal, onPedidoConfirmado }) {
 
   // ── Cálculos ──
   const taxaEntrega  = tipoEntrega === 'retirada' || cupomAplicado?.freteGratis ? 0 : TAXA_ENTREGA;
-  const desconto     = cupomAplicado?.desconto ? subtotal * cupomAplicado.desconto : 0;
-  const total        = subtotal - desconto + taxaEntrega;
+  const desconto = cupomAplicado 
+    ? (cupomAplicado.valorFixo > 0 ? cupomAplicado.valorFixo : subtotal * cupomAplicado.desconto)
+    : 0;
+  const total = Math.max(0, subtotal - desconto + taxaEntrega); // Math.max evita total negativo  
   const tempoEstimado = tipoEntrega === 'retirada' ? TEMPO_RETIRADA : TEMPO_ENTREGA;
 
   // ── Validações por step ──
@@ -62,17 +64,45 @@ export default function Checkout({ itens, subtotal, onPedidoConfirmado }) {
     else navigate(-1);
   }
 
-  function aplicarCupom() {
-    const codigo = cupom.trim().toUpperCase();
-    const encontrado = CUPONS_VALIDOS[codigo];
-    if (encontrado) {
-      setCupomAplicado(encontrado);
-      setCupomStatus('ok');
-    } else {
-      setCupomAplicado(null);
-      setCupomStatus('erro');
+ async function aplicarCupom() {
+  const codigo = cupom.trim().toUpperCase();
+  if (!codigo) return;
+
+  try {
+    // Pegamos a URL da API
+    const API = import.meta.env.VITE_API_URL || 'http://localhost:3001/api';
+    
+    // IMPORTANTE: Substitua 'ID_DA_SUA_PIZZARIA' pelo ID real. 
+    // Se estiver no objeto itens, pode ser itens[0].pizzariaId
+    const pizzariaId = itens[0]?.pizzariaId || "69adf98c93cdde6b61f8a83e"; 
+
+    const url = `${API}/cupons/validar?codigo=${codigo}&pizzariaId=${pizzariaId}`;
+    
+    const res = await fetch(url);
+    const data = await res.json();
+
+    if (!res.ok) {
+      throw new Error(data.erro || 'Cupom inválido');
     }
+
+    // Se chegou aqui, o cupom é válido
+ // Dentro da função aplicarCupom, após o res.json()...
+setCupomAplicado({
+  codigo: data.codigo,
+  desconto: data.tipo === 'percentual' ? data.valor / 100 : 0, 
+  valorFixo: data.tipo === 'fixo' ? data.valor : 0, // Garante que pega o valor bruto (ex: 10)
+  label: data.tipo === 'percentual' ? `${data.valor}% de desconto!` : `R$ ${data.valor} de desconto!`,
+  freteGratis: data.tipo === 'frete'
+});
+    
+    setCupomStatus('ok');
+
+  } catch (err) {
+    console.error("Erro cupom:", err.message);
+    setCupomAplicado(null);
+    setCupomStatus('erro');
   }
+}
 
   function handleDados(e) {
     setDados((prev) => ({ ...prev, [e.target.name]: e.target.value }));
@@ -145,12 +175,12 @@ export default function Checkout({ itens, subtotal, onPedidoConfirmado }) {
         nome:     dados.nome,
         telefone: dados.telefone,
       },
-      cupom: cupomAplicado ? {
-        codigo:      cupom.trim().toUpperCase(),
-        desconto:    desconto,
-        porcentagem: cupomAplicado.desconto ? cupomAplicado.desconto * 100 : 0,
-        valido:      true,
-      } : null,
+cupom: cupomAplicado ? {
+  codigo: cupomAplicado.codigo, // Use o código que veio da API
+  desconto: desconto,           // Valor em REAIS (ex: 10.00)
+  porcentagem: cupomAplicado.desconto ? cupomAplicado.desconto * 100 : 0,
+  valido: true,
+} : null,
       pagamento:           PAGAMENTO_MAP[pagamento],
       statusPedido:        'Preparando',
       tempoEsperaEstimado: tipoEntrega === 'retirada' ? 22 : 40,
