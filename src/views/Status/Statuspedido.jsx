@@ -28,21 +28,31 @@ function indiceStatus(statusAtual) {
   return ['Aguardando confirmacao', 'Preparando', 'Saiu para entrega', 'Concluido'].indexOf(statusAtual);
 }
 
-function useCronometro(minutos) {
-  const [segundosRestantes, setSegundosRestantes] = useState(minutos * 60);
-  const intervalo = useRef(null);
-
-  useEffect(() => { setSegundosRestantes(minutos * 60); }, [minutos]);
+function useCronometro(tempoMinutos, criadoEm) {
+  const [segundosRestantes, setSegundosRestantes] = useState(0);
 
   useEffect(() => {
-    if (segundosRestantes <= 0) return;
-    intervalo.current = setInterval(() => setSegundosRestantes(s => Math.max(0, s - 1)), 1000);
-    return () => clearInterval(intervalo.current);
-  }, [segundosRestantes]);
+    const fim = new Date(criadoEm).getTime() + tempoMinutos * 60 * 1000;
+
+    const atualizar = () => {
+      const agora = Date.now();
+      const restante = Math.max(0, Math.floor((fim - agora) / 1000));
+      setSegundosRestantes(restante);
+    };
+
+    atualizar();
+    const intervalo = setInterval(atualizar, 1000);
+
+    return () => clearInterval(intervalo);
+  }, [tempoMinutos, criadoEm]);
 
   const min = Math.floor(segundosRestantes / 60).toString().padStart(2, '0');
   const seg = (segundosRestantes % 60).toString().padStart(2, '0');
-  return { display: `${min}:${seg}`, encerrado: segundosRestantes === 0 };
+
+  return {
+    display: `${min}:${seg}`,
+    encerrado: segundosRestantes === 0
+  };
 }
 
 // ── Componente de avaliação ──
@@ -125,7 +135,10 @@ export default function StatusPedido() {
 
   const chat = useChat(pedidoId, 'cliente');
   const tempo = pedido?.tempoEsperaEstimado ?? 40;
-  const { display: timerDisplay, encerrado } = useCronometro(tempo);
+ const { display: timerDisplay, encerrado } = useCronometro(
+  tempo,
+  pedido?.createdAt
+);
 
   useEffect(() => {
     async function buscarPedido() {
@@ -192,10 +205,24 @@ export default function StatusPedido() {
             <div className="status-timer-label">
               {ehRetirada ? 'Pronto para retirada em' : 'Tempo estimado de entrega'}
             </div>
-            <div className="status-timer-valor">{encerrado ? '00:00' : timerDisplay}</div>
-            <div className="status-timer-desc">
-              {encerrado ? 'Já deve estar chegando! 🚀' : `Estimativa de ${tempo} minutos`}
-            </div>
+           {!encerrado ? (
+  <>
+    <div className="status-timer-valor">{timerDisplay}</div>
+    <div className="status-timer-desc">
+      Estimativa de {tempo} minutos
+    </div>
+  </>
+) : (
+  <>
+    <div className="status-timer-atrasado">⚠️</div>
+    <div className="status-timer-atrasado-msg">
+      Seu pedido está um pouco atrasado
+    </div>
+    <div className="status-timer-desc">
+      A pizzaria ainda está finalizando seu pedido
+    </div>
+  </>
+)}
           </div>
         ) : (
           <div className="status-card status-concluido-card">

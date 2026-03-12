@@ -466,6 +466,17 @@
   color: #166534;
 }
 
+.status-timer-atrasado {
+  font-size: 42px;
+}
+
+.status-timer-atrasado-msg {
+  font-size: 18px;
+  font-weight: 600;
+  color: #ff7a00;
+  margin-top: 8px;
+}
+
 @keyframes fadeIn {
   from { opacity: 0; transform: translateY(4px); }
   to   { opacity: 1; transform: translateY(0); }
