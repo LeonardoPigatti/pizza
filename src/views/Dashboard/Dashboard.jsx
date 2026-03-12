@@ -41,8 +41,11 @@ function calcularTotalPedido(pedido) {
   // 3. Busca o desconto
   const desconto = Number(pedido.cupom?.desconto || 0);
   
-  // 4. Resultado final
-  return subtotal + taxaEntrega - desconto;
+ // 4. Resultado final: Subtotal + Entrega - Desconto
+  // Math.max(0, ...) garante que se o desconto for maior que o subtotal, o valor não fique negativo
+  const total = (subtotal + taxaEntrega) - desconto;
+
+  return Math.max(0, total);
 }
 
 const STATUS_ORDEM = ['Aguardando confirmacao', 'Preparando', 'Saiu para entrega', 'Concluido'];
@@ -556,7 +559,7 @@ export default function Dashboard() {
   <div style={{ fontSize: '1.1rem', fontWeight: 800, color: '#e03c1f', marginTop: 4 }}>
     Total: {formatarPreco(calcularTotalPedido(pedido))}
   </div>
-</div>
+                  </div>
                   <div className="pedido-contato">
                     <strong>{pedido.contato?.nome}</strong>
                     {pedido.contato?.telefone}
