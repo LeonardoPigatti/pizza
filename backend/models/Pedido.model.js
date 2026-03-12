@@ -36,6 +36,7 @@ const ContatoSchema = new mongoose.Schema({
 
 const CupomSchema = new mongoose.Schema({
   codigo:      { type: String, required: true },
+  tipo:        { type: String, enum: ['percentual', 'fixo', 'frete_gratis'] },
   desconto:    { type: Number, default: 0 },
   porcentagem: { type: Number },
   valido:      { type: Boolean, default: true },

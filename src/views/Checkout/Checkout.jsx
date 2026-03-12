@@ -153,6 +153,7 @@ export default function Checkout({ itens, subtotal, pizzariaId, onPedidoConfirma
       contato:  { nome: dados.nome, telefone: dados.telefone },
       cupom: cupomAplicado ? {
         codigo:      cupomAplicado.codigo,
+        tipo:        cupomAplicado.tipo,
         desconto,
         porcentagem: cupomAplicado.tipo === 'percentual' ? cupomAplicado.valor : 0,
         valido:      true,

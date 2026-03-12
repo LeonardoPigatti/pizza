@@ -18,34 +18,24 @@ function formatarData(dataISO) {
 function calcularTotalItem(pizza) {
   let preco = 0;
   if (pizza.preco && pizza.preco > 0) {
-    // pedido novo — preco salvo diretamente no item
     preco = pizza.preco;
   } else if (pizza.tamanho && pizza.produtoId?.tamanhos?.length > 0) {
-    // pizza com tamanho — busca no produtoId populado
     const tam = pizza.produtoId.tamanhos.find(t => t.tamanho === pizza.tamanho);
     preco = tam?.preco || 0;
   } else if (pizza.produtoId?.preco) {
-    // produto sem tamanho (bebida, hambúrguer...)
     preco = pizza.produtoId.preco;
   }
   const adicionais = pizza.adicionais?.reduce((s, a) => s + (a.preco || 0) * (a.quantidade || 1), 0) || 0;
   return (preco + adicionais) * (pizza.quantidade || 1);
 }
-function calcularTotalPedido(pedido) {
-  // 1. Soma das pizzas
-  const subtotal = pedido.pizzas.reduce((s, p) => s + calcularTotalItem(p), 0);
-  
-  // 2. Busca a taxa de entrega (tenta no topo do objeto ou dentro do endereço)
-  // const taxaEntrega = Number(pedido.taxaEntrega || pedido.enderecoEntrega?.taxa || 0); ta mockado porque ainda não fixemos isso 
-  const taxaEntrega = 5.49;
-  // 3. Busca o desconto
-  const desconto = Number(pedido.cupom?.desconto || 0);
-  
- // 4. Resultado final: Subtotal + Entrega - Desconto
-  // Math.max(0, ...) garante que se o desconto for maior que o subtotal, o valor não fique negativo
-  const total = (subtotal + taxaEntrega) - desconto;
-
-  return Math.max(0, total);
+function calcularTotalPedido(pedido, taxaEntregaLoja) {
+  const subtotal    = pedido.pizzas.reduce((s, p) => s + calcularTotalItem(p), 0);
+  const freteGratis = pedido.cupom?.tipo === 'frete_gratis';
+  const taxa        = pedido.tipoEntrega === 'Retirada' || freteGratis
+    ? 0
+    : Number(pedido.taxaEntrega ?? taxaEntregaLoja ?? 0);
+  const desconto    = Number(pedido.cupom?.desconto || 0);
+  return Math.max(0, subtotal + taxa - desconto);
 }
 
 const STATUS_ORDEM = ['Aguardando confirmacao', 'Preparando', 'Saiu para entrega', 'Concluido'];
@@ -129,57 +119,40 @@ export default function Dashboard() {
   const { pizzariaId } = useParams();
   const navigate       = useNavigate();
 
-  const [pedidos, setPedidos]           = useState([]);
-  const [loading, setLoading]           = useState(true);
-  const [erro, setErro]                 = useState(null);
-  const [filtro, setFiltro]             = useState('todos');
-  const [usuario, setUsuario]           = useState(null);
-  const [chatPedidoId, setChatPedidoId] = useState(null);
+  const [taxaEntrega, setTaxaEntrega]         = useState(0);
+  const [pedidos, setPedidos]                 = useState([]);
+  const [loading, setLoading]                 = useState(true);
+  const [erro, setErro]                       = useState(null);
+  const [filtro, setFiltro]                   = useState('todos');
+  const [usuario, setUsuario]                 = useState(null);
+  const [chatPedidoId, setChatPedidoId]       = useState(null);
   const [modalRetrocesso, setModalRetrocesso] = useState(null);
-  const [menuAberto, setMenuAberto]     = useState(false);
-  const [statusLoja, setStatusLoja]     = useState('open');
+  const [menuAberto, setMenuAberto]           = useState(false);
+  const [statusLoja, setStatusLoja]           = useState('open');
   const [modalFecharLoja, setModalFecharLoja] = useState(false);
   const [modalLojaAviso, setModalLojaAviso]   = useState(false);
+  const [naoLidas, setNaoLidas]               = useState({});
 
-  // pedidoId → true quando há mensagem não lida
-  const [naoLidas, setNaoLidas] = useState({});
-  // ref para saber quais pedidos já tinham mensagens (evita marcar histórico inicial)
   const mensagensIniciais = useRef({});
-
-  const perfil    = usuario?.perfil || 'admin';
+  const perfil     = usuario?.perfil || 'admin';
   const autorLabel = perfil === 'motoboy' ? '🛵 Motoboy' : '🍕 Pizzaria';
-  const chat = useChat(chatPedidoId, 'pizzaria', autorLabel, perfil);
+  const chat       = useChat(chatPedidoId, 'pizzaria', autorLabel, perfil);
 
-  // Quando chega nova mensagem via socket, marca como não lida se o chat não estiver aberto
   useEffect(() => {
-    if (!chatPedidoId) return;
-    if (!chat.mensagens.length) return;
-
+    if (!chatPedidoId || !chat.mensagens.length) return;
     const ultima = chat.mensagens[chat.mensagens.length - 1];
-    // só marca se for do cliente (autor !== 'pizzaria')
-    if (ultima.autor === 'pizzaria') return;
-
-    // se o chat desse pedido está aberto, não marca
-    if (chatPedidoId === ultima.pedidoId) return;
-
+    if (ultima.autor === 'pizzaria' || chatPedidoId === ultima.pedidoId) return;
     setNaoLidas(prev => ({ ...prev, [chatPedidoId]: true }));
   }, [chat.mensagens]);
 
-  // Escuta mensagens de TODOS os pedidos via socket global
   useEffect(() => {
-    // Importa o socket global do useChat para escutar mensagens de qualquer sala
-    // Usamos um segundo canal: quando chega mensagem num pedido que não está aberto
+    if (!window.__socketPizzaria) return;
     const handler = (msg) => {
-      if (msg.autor === 'pizzaria') return; // ignora as próprias mensagens
-      if (chatPedidoId === msg.pedidoId) return; // chat aberto, não precisa piscar
+      if (msg.autor === 'pizzaria' || chatPedidoId === msg.pedidoId) return;
       setNaoLidas(prev => ({ ...prev, [msg.pedidoId]: true }));
     };
-
-    // Acessa o socket do useChat — ele é singleton global
-    if (window.__socketPizzaria) {
-      window.__socketPizzaria.on('mensagem', handler);
-      return () => window.__socketPizzaria.off('mensagem', handler);
-    }
+    window.__socketPizzaria.on('mensagem', handler);
+    return () => window.__socketPizzaria.off('mensagem', handler);
   }, [chatPedidoId]);
 
   useEffect(() => {
@@ -204,7 +177,10 @@ export default function Dashboard() {
         if (!resPedidos.ok) throw new Error(data.erro);
         setPedidos(data.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt)));
         const pizzariaData = await resPizzaria.json();
-        if (resPizzaria.ok) setStatusLoja(pizzariaData.status || 'open');
+        if (resPizzaria.ok) {
+          setStatusLoja(pizzariaData.status || 'open');
+          setTaxaEntrega(pizzariaData.taxaEntrega || 0);
+        }
       } catch (err) {
         setErro(err.message);
       } finally {
@@ -216,10 +192,8 @@ export default function Dashboard() {
 
   const pedidosFiltrados = useMemo(() => {
     if (filtro === 'todos') return pedidos;
-    if (filtro === 'aguardando-retirada')
-      return pedidos.filter(p => p.statusPedido === 'Saiu para entrega' && !p.motoboyPegou);
-    if (filtro === 'em-entrega')
-      return pedidos.filter(p => p.statusPedido === 'Saiu para entrega' && p.motoboyPegou);
+    if (filtro === 'aguardando-retirada') return pedidos.filter(p => p.statusPedido === 'Saiu para entrega' && !p.motoboyPegou);
+    if (filtro === 'em-entrega')          return pedidos.filter(p => p.statusPedido === 'Saiu para entrega' && p.motoboyPegou);
     return pedidos.filter(p => p.statusPedido === filtro);
   }, [pedidos, filtro]);
 
@@ -229,7 +203,7 @@ export default function Dashboard() {
   }, [pedidos]);
 
   const emAndamento     = pedidos.filter(p => p.statusPedido !== 'Concluido').length;
-  const faturamentoHoje = totalHoje.reduce((s, p) => s + calcularTotalPedido(p), 0);
+  const faturamentoHoje = totalHoje.reduce((s, p) => s + calcularTotalPedido(p, taxaEntrega), 0);
 
   async function atualizarStatus(pedidoId, novoStatus, motivo = null) {
     const token = localStorage.getItem('token');
@@ -250,11 +224,8 @@ export default function Dashboard() {
   function handleMudarStatus(pedido, novoStatus) {
     const idxAtual = STATUS_ORDEM.indexOf(pedido.statusPedido);
     const idxNovo  = STATUS_ORDEM.indexOf(novoStatus);
-    if (idxNovo < idxAtual) {
-      setModalRetrocesso({ pedido, novoStatus });
-    } else {
-      atualizarStatus(pedido._id, novoStatus);
-    }
+    if (idxNovo < idxAtual) setModalRetrocesso({ pedido, novoStatus });
+    else atualizarStatus(pedido._id, novoStatus);
   }
 
   function confirmarRetrocesso(motivo) {
@@ -271,10 +242,7 @@ export default function Dashboard() {
   async function pegarPizza(pedidoId) {
     const token = localStorage.getItem('token');
     try {
-      const res  = await fetch(`${API}/pedidos/${pedidoId}/pegar`, {
-        method:  'PATCH',
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      const res  = await fetch(`${API}/pedidos/${pedidoId}/pegar`, { method: 'PATCH', headers: { Authorization: `Bearer ${token}` } });
       const data = await res.json();
       if (!res.ok) throw new Error(data.erro);
       setPedidos(prev => prev.map(p => p._id === pedidoId ? data : p));
@@ -284,13 +252,9 @@ export default function Dashboard() {
   }
 
   function toggleChat(pedidoId) {
-    if (chatPedidoId === pedidoId) {
-      setChatPedidoId(null);
-    } else {
-      setChatPedidoId(pedidoId);
-      // limpa notificação ao abrir
-      setNaoLidas(prev => ({ ...prev, [pedidoId]: false }));
-    }
+    if (chatPedidoId === pedidoId) { setChatPedidoId(null); return; }
+    setChatPedidoId(pedidoId);
+    setNaoLidas(prev => ({ ...prev, [pedidoId]: false }));
   }
 
   function sair() {
@@ -299,13 +263,10 @@ export default function Dashboard() {
     navigate('/login');
   }
 
-  // calcularTotalItem definida no escopo global acima
-
   async function confirmarFecharLoja() {
     const novoStatus = statusLoja === 'open' ? 'closed' : 'open';
     const token = localStorage.getItem('token');
     try {
-      // 1. Atualiza status da loja
       const res = await fetch(`${API}/pizzarias/${pizzariaId}/status`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
@@ -314,69 +275,41 @@ export default function Dashboard() {
       if (!res.ok) throw new Error('Erro ao atualizar status da loja');
       setStatusLoja(novoStatus);
 
-      // 2. Se fechando, salva infos financeiras do dia
       if (novoStatus === 'closed') {
-        const hoje = new Date().toDateString();
-        const pedidosHoje = pedidos.filter(p =>
-          new Date(p.createdAt).toDateString() === hoje &&
-          p.statusPedido === 'Concluido'
-        );
-
-        const faturamentoTotal = pedidosHoje.reduce((s, p) =>
-          s + p.pizzas.reduce((ps, pizza) => ps + calcularTotalItem(pizza), 0), 0
-        );
-
-        const pedidosCartao   = pedidosHoje.filter(p => p.pagamento === 'Cartao online');
-        const pedidosDinheiro = pedidosHoje.filter(p => p.pagamento === 'Dinheiro na entrega');
-
-        const somarPedido = (pedido) =>
-          pedido.pizzas.reduce((s, pizza) => s + calcularTotalItem(pizza), 0);
-
-        // Top 5 produtos
-        const contagemProdutos = {};
-        pedidosHoje.forEach(p => {
-          p.pizzas.forEach(pizza => {
-            const nome = pizza.nomeProduto || pizza.produtoId?.nome || 'Produto';
-            if (!contagemProdutos[nome]) contagemProdutos[nome] = { nome, quantidade: 0, faturamento: 0 };
-            contagemProdutos[nome].quantidade  += pizza.quantidade;
-            contagemProdutos[nome].faturamento += calcularTotalItem(pizza);
-          });
-        });
-        const topProdutos = Object.values(contagemProdutos)
-          .sort((a, b) => b.quantidade - a.quantidade)
-          .slice(0, 5);
-
-        // Avaliação média do dia
+        const hoje        = new Date().toDateString();
+        const pedidosHoje = pedidos.filter(p => new Date(p.createdAt).toDateString() === hoje && p.statusPedido === 'Concluido');
+        const faturamentoTotal = pedidosHoje.reduce((s, p) => s + p.pizzas.reduce((ps, pz) => ps + calcularTotalItem(pz), 0), 0);
+        const somarPedido = p => p.pizzas.reduce((s, pz) => s + calcularTotalItem(pz), 0);
         const comAvaliacao = pedidosHoje.filter(p => p.avaliacao != null);
-        const avaliacaoMediaDia = comAvaliacao.length > 0
-          ? comAvaliacao.reduce((s, p) => s + p.avaliacao, 0) / comAvaliacao.length
-          : null;
 
-        const agora = new Date();
-        const horaFechamento = agora.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
-
-        const infoFinanceira = {
-          pizzariaId,
-          data:              agora,
-          horaFechamento,
-          totalPedidos:      pedidosHoje.length,
-          pedidosEntrega:    pedidosHoje.filter(p => p.tipoEntrega === 'Entrega').length,
-          pedidosRetirada:   pedidosHoje.filter(p => p.tipoEntrega === 'Retirada').length,
-          faturamentoTotal,
-          ticketMedio:       pedidosHoje.length > 0 ? faturamentoTotal / pedidosHoje.length : 0,
-          totalCartaoOnline: pedidosCartao.reduce((s, p) => s + somarPedido(p), 0),
-          totalDinheiro:     pedidosDinheiro.reduce((s, p) => s + somarPedido(p), 0),
-          qtdCartaoOnline:   pedidosCartao.length,
-          qtdDinheiro:       pedidosDinheiro.length,
-          topProdutos,
-          avaliacaoMediaDia: avaliacaoMediaDia ? Math.round(avaliacaoMediaDia * 10) / 10 : null,
-          totalAvaliacoesDia: comAvaliacao.length,
-        };
+        const contagemProdutos = {};
+        pedidosHoje.forEach(p => p.pizzas.forEach(pizza => {
+          const nome = pizza.nomeProduto || pizza.produtoId?.nome || 'Produto';
+          if (!contagemProdutos[nome]) contagemProdutos[nome] = { nome, quantidade: 0, faturamento: 0 };
+          contagemProdutos[nome].quantidade  += pizza.quantidade;
+          contagemProdutos[nome].faturamento += calcularTotalItem(pizza);
+        }));
 
         await fetch(`${API}/financeiro`, {
           method:  'POST',
           headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-          body:    JSON.stringify(infoFinanceira),
+          body: JSON.stringify({
+            pizzariaId,
+            data:               new Date(),
+            horaFechamento:     new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }),
+            totalPedidos:       pedidosHoje.length,
+            pedidosEntrega:     pedidosHoje.filter(p => p.tipoEntrega === 'Entrega').length,
+            pedidosRetirada:    pedidosHoje.filter(p => p.tipoEntrega === 'Retirada').length,
+            faturamentoTotal,
+            ticketMedio:        pedidosHoje.length > 0 ? faturamentoTotal / pedidosHoje.length : 0,
+            totalCartaoOnline:  pedidosHoje.filter(p => p.pagamento === 'Cartao online').reduce((s, p) => s + somarPedido(p), 0),
+            totalDinheiro:      pedidosHoje.filter(p => p.pagamento === 'Dinheiro na entrega').reduce((s, p) => s + somarPedido(p), 0),
+            qtdCartaoOnline:    pedidosHoje.filter(p => p.pagamento === 'Cartao online').length,
+            qtdDinheiro:        pedidosHoje.filter(p => p.pagamento === 'Dinheiro na entrega').length,
+            topProdutos:        Object.values(contagemProdutos).sort((a, b) => b.quantidade - a.quantidade).slice(0, 5),
+            avaliacaoMediaDia:  comAvaliacao.length > 0 ? Math.round(comAvaliacao.reduce((s, p) => s + p.avaliacao, 0) / comAvaliacao.length * 10) / 10 : null,
+            totalAvaliacoesDia: comAvaliacao.length,
+          }),
         });
       }
     } catch (err) {
@@ -400,11 +333,7 @@ export default function Dashboard() {
         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
           {perfil === 'admin' && (
             <div className="menu-admin-wrapper">
-              <button
-                className="btn-perfil-pizzaria"
-                onClick={() => setMenuAberto(p => !p)}
-                title="Menu da pizzaria"
-              >
+              <button className="btn-perfil-pizzaria" onClick={() => setMenuAberto(p => !p)} title="Menu da pizzaria">
                 🍕
               </button>
               {menuAberto && (
@@ -424,10 +353,7 @@ export default function Dashboard() {
                         setMenuAberto(false);
                         if (statusLoja === 'open') {
                           const abertos = pedidos.filter(p => p.statusPedido !== 'Concluido');
-                          if (abertos.length > 0) {
-                            setModalLojaAviso(abertos.length);
-                            return;
-                          }
+                          if (abertos.length > 0) { setModalLojaAviso(abertos.length); return; }
                         }
                         setModalFecharLoja(true);
                       }}
@@ -473,19 +399,12 @@ export default function Dashboard() {
 
         <div className="dashboard-filtros">
           {(perfil === 'motoboy' ? FILTROS_MOTOBOY : FILTROS_ADMIN).map(f => {
-            const count = f.valor === 'aguardando-retirada'
-              ? pedidos.filter(p => p.statusPedido === 'Saiu para entrega' && !p.motoboyPegou).length
-              : f.valor === 'em-entrega'
-                ? pedidos.filter(p => p.statusPedido === 'Saiu para entrega' && p.motoboyPegou).length
-                : f.valor !== 'todos'
-                  ? pedidos.filter(p => p.statusPedido === f.valor).length
-                  : null;
+            const count =
+              f.valor === 'aguardando-retirada' ? pedidos.filter(p => p.statusPedido === 'Saiu para entrega' && !p.motoboyPegou).length :
+              f.valor === 'em-entrega'          ? pedidos.filter(p => p.statusPedido === 'Saiu para entrega' && p.motoboyPegou).length :
+              f.valor !== 'todos'               ? pedidos.filter(p => p.statusPedido === f.valor).length : null;
             return (
-              <button
-                key={f.valor}
-                className={`filtro-btn ${filtro === f.valor ? 'ativo' : ''}`}
-                onClick={() => setFiltro(f.valor)}
-              >
+              <button key={f.valor} className={`filtro-btn ${filtro === f.valor ? 'ativo' : ''}`} onClick={() => setFiltro(f.valor)}>
                 {f.label}
                 {count !== null && <span style={{ marginLeft: 6, opacity: 0.7 }}>({count})</span>}
               </button>
@@ -498,183 +417,196 @@ export default function Dashboard() {
         {!loading && !erro && pedidosFiltrados.length === 0 && <div className="dashboard-vazio">Nenhum pedido encontrado.</div>}
 
         <div className="pedidos-lista">
-          {!loading && !erro && pedidosFiltrados.map(pedido => (
-            <div key={pedido._id} className="pedido-card">
+          {!loading && !erro && pedidosFiltrados.map(pedido => {
+            const subtotal    = pedido.pizzas.reduce((s, p) => s + calcularTotalItem(p), 0);
+            const freteGratis = pedido.cupom?.tipo === 'frete_gratis';
+            const taxaEfetiva = pedido.tipoEntrega === 'Retirada' || freteGratis
+              ? 0
+              : Number(pedido.taxaEntrega ?? taxaEntrega ?? 0);
+            const desconto    = Number(pedido.cupom?.desconto || 0);
+            const total       = Math.max(0, subtotal + taxaEfetiva - desconto);
 
-              <div className="pedido-card-header">
-                <div className="pedido-card-header-esquerda">
-                  <div>
-                    <div className="pedido-numero">#{pedido._id.toString().slice(-5).toUpperCase()}</div>
-                    <div className="pedido-hora">{formatarData(pedido.createdAt)} às {formatarHora(pedido.createdAt)}</div>
-                  </div>
-                  <span className="pedido-badge-entrega">
-                    {pedido.tipoEntrega === 'Entrega' ? '🛵 Entrega' : '🏪 Retirada'}
-                  </span>
-                </div>
-                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 6 }}>
-                  <span className={`pedido-status-badge ${statusClass(pedido.statusPedido)}`}>
-                    {pedido.statusPedido}
-                  </span>
-                  {perfil === 'motoboy' && pedido.statusPedido === 'Saiu para entrega' && !pedido.motoboyPegou && (
-                    <span className="badge-aguardando-retirada">⏳ Aguardando retirada</span>
-                  )}
-                </div>
-              </div>
+            return (
+              <div key={pedido._id} className="pedido-card">
 
-              <div className="pedido-card-body">
-                <div className="pedido-itens">
-                  {pedido.pizzas.map((pizza, i) => (
-                    <div key={i} className="pedido-item-linha">
-                      <strong>{pizza.quantidade}× {pizza.nomeProduto || pizza.produtoId?.nome || 'Produto'}</strong>
-                      {pizza.tamanho && ` · ${pizza.tamanho}`}
-                      <div className="pedido-item-detalhe">
-                        {pizza.sabores?.join(', ')}
-                        {pizza.adicionais?.length > 0 && ` + ${pizza.adicionais.map(a => a.nome).join(', ')}`}
-                        {pizza.observacao && ` — ${pizza.observacao}`}
-                      </div>
+                <div className="pedido-card-header">
+                  <div className="pedido-card-header-esquerda">
+                    <div>
+                      <div className="pedido-numero">#{pedido._id.toString().slice(-5).toUpperCase()}</div>
+                      <div className="pedido-hora">{formatarData(pedido.createdAt)} às {formatarHora(pedido.createdAt)}</div>
                     </div>
-                  ))}
+                    <span className="pedido-badge-entrega">
+                      {pedido.tipoEntrega === 'Entrega' ? '🛵 Entrega' : '🏪 Retirada'}
+                    </span>
+                  </div>
+                  <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 6 }}>
+                    <span className={`pedido-status-badge ${statusClass(pedido.statusPedido)}`}>
+                      {pedido.statusPedido}
+                    </span>
+                    {perfil === 'motoboy' && pedido.statusPedido === 'Saiu para entrega' && !pedido.motoboyPegou && (
+                      <span className="badge-aguardando-retirada">⏳ Aguardando retirada</span>
+                    )}
+                  </div>
                 </div>
 
-                <div className="pedido-card-direita">
-                  <div className="pedido-valores-detalhe" style={{ textAlign: 'right', marginBottom: 8, borderTop: '1px solid #eee', paddingTop: 8 }}>
-  
-  <div style={{ fontSize: '0.75rem', color: '#888' }}>
-    Subtotal: {formatarPreco(pedido.pizzas.reduce((s, p) => s + calcularTotalItem(p), 0))}
-  </div>
-
-  {/* Linha da Taxa de Entrega - Verifique se o nome do campo é este mesmo */}
-  {(5.49 > 0 || pedido.enderecoEntrega?.taxa > 0) && (
-    <div style={{ fontSize: '0.75rem', color: '#666' }}>
-      Entrega: R$ 05.49
-    </div>
-  )}
-
-  {pedido.cupom?.desconto > 0 && (
-    <div style={{ fontSize: '0.75rem', color: '#27ae60', fontWeight: 'bold' }}>
-      Cupom {pedido.cupom.codigo}: - {formatarPreco(pedido.cupom.desconto)}
-    </div>
-  )}
-
-  <div style={{ fontSize: '1.1rem', fontWeight: 800, color: '#e03c1f', marginTop: 4 }}>
-    Total: {formatarPreco(calcularTotalPedido(pedido))}
-  </div>
-                  </div>
-                  <div className="pedido-contato">
-                    <strong>{pedido.contato?.nome}</strong>
-                    {pedido.contato?.telefone}
-                    {pedido.enderecoEntrega?.bairro && (
-                      <span style={{ display: 'block' }}>{pedido.enderecoEntrega.bairro}</span>
-                    )}
-                    {perfil === 'motoboy' && pedido.enderecoEntrega?.rua && (
-                      <button className="btn-mapa" onClick={() => abrirMapa(pedido.enderecoEntrega)}>
-                        🗺️ Abrir no Maps
-                      </button>
-                    )}
-                    {pedido.contato?.telefone && (
-                      <a className="btn-ligar" href={`tel:${pedido.contato.telefone.replace(/\D/g, '')}`}>
-                        📞 Ligar
-                      </a>
-                    )}
+                <div className="pedido-card-body">
+                  <div className="pedido-itens">
+                    {pedido.pizzas.map((pizza, i) => (
+                      <div key={i} className="pedido-item-linha">
+                        <strong>{pizza.quantidade}× {pizza.nomeProduto || pizza.produtoId?.nome || 'Produto'}</strong>
+                        {pizza.tamanho && ` · ${pizza.tamanho}`}
+                        <div className="pedido-item-detalhe">
+                          {pizza.sabores?.join(', ')}
+                          {pizza.adicionais?.length > 0 && ` + ${pizza.adicionais.map(a => a.nome).join(', ')}`}
+                          {pizza.observacao && ` — ${pizza.observacao}`}
+                        </div>
+                      </div>
+                    ))}
                   </div>
 
-                  <div style={{ fontSize: '0.9rem', fontWeight: 800, color: '#e03c1f' }}>
-                    {formatarPreco(calcularTotalPedido(pedido))}
-                  </div>
-                  <div style={{ fontSize: '0.75rem', color: '#aaa', marginBottom: 4 }}>
-                    💳 {pedido.pagamento}
-                  </div>
+                  <div className="pedido-card-direita">
+                    <div className="pedido-valores-detalhe" style={{ textAlign: 'right', marginBottom: 8, borderTop: '1px solid #eee', paddingTop: 8 }}>
 
-                  {perfil === 'motoboy' ? (
-                    pedido.statusPedido === 'Saiu para entrega' ? (
-                      <>
-                        {!pedido.motoboyPegou ? (
-                          <button className="btn-pegou" onClick={() => pegarPizza(pedido._id)}>
-                            🍕 Peguei a pizza
-                          </button>
-                        ) : (
-                          <>
-                            <span className="badge-pegou">✓ Pizza retirada</span>
-                            <button className="btn-proximo-status" onClick={() => atualizarStatus(pedido._id, 'Concluido')}>
-                              Confirmar Entrega
-                            </button>
-                            <button
-                              className={`btn-chat ${naoLidas[pedido._id] ? 'piscando' : ''}`}
-                              onClick={() => toggleChat(pedido._id)}
-                            >
-                              {chatPedidoId === pedido._id ? '✕ Fechar chat' : '💬 Chat com cliente'}
-                            </button>
-                          </>
-                        )}
-                      </>
-                    ) : (
-                      <span style={{ fontSize: '0.75rem', color: '#bbb', fontStyle: 'italic' }}>
-                        {pedido.statusPedido === 'Concluido' ? 'Entrega concluida' : 'Aguardando saida para entrega'}
-                      </span>
-                    )
-                  ) : (
-                    <>
-                      <select
-                        className="select-status"
-                        value={pedido.statusPedido}
-                        onChange={e => handleMudarStatus(pedido, e.target.value)}
-                      >
-                        {TODOS_STATUS.map(s => (
-                          <option key={s.valor} value={s.valor}>{s.label}</option>
-                        ))}
-                      </select>
+                      <div style={{ fontSize: '0.75rem', color: '#888' }}>
+                        Subtotal: {formatarPreco(subtotal)}
+                      </div>
 
-                      {PROXIMO_STATUS[pedido.statusPedido] && (
-                        <button
-                          className="btn-proximo-status"
-                          onClick={() => handleMudarStatus(pedido, PROXIMO_STATUS[pedido.statusPedido].valor)}
-                        >
-                          {PROXIMO_STATUS[pedido.statusPedido].label}
-                        </button>
+                      {pedido.tipoEntrega === 'Entrega' && (
+                        <div style={{ fontSize: '0.75rem', color: freteGratis ? '#27ae60' : '#666' }}>
+                          Entrega: {freteGratis ? 'Grátis 🎉' : formatarPreco(taxaEfetiva)}
+                        </div>
                       )}
 
-                      <button
-                        className={`btn-chat ${naoLidas[pedido._id] ? 'piscando' : ''}`}
-                        onClick={() => toggleChat(pedido._id)}
-                      >
-                        {chatPedidoId === pedido._id ? '✕ Fechar chat' : '💬 Chat com cliente'}
-                      </button>
-                    </>
-                  )}
-                </div>
-              </div>
+                      {desconto > 0 && (
+                        <div style={{ fontSize: '0.75rem', color: '#27ae60', fontWeight: 'bold' }}>
+                          Cupom {pedido.cupom.codigo}: - {formatarPreco(desconto)}
+                        </div>
+                      )}
 
-              {perfil === 'admin' && pedido.historicoStatus?.length > 0 && (
-                <div className="pedido-historico">
-                  <div className="pedido-historico-titulo">📋 Histórico de alterações</div>
-                  {pedido.historicoStatus.map((h, i) => (
-                    <div key={i} className="pedido-historico-item">
-                      <span className="historico-seta">{h.de} → {h.para}</span>
-                      <span className="historico-motivo">"{h.motivo}"</span>
-                      <span className="historico-hora">
-                        {new Date(h.criadoEm).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
-                      </span>
+                      {freteGratis && (
+                        <div style={{ fontSize: '0.75rem', color: '#27ae60', fontWeight: 'bold' }}>
+                          Cupom {pedido.cupom.codigo}: frete grátis
+                        </div>
+                      )}
+
+                      <div style={{ fontSize: '1.1rem', fontWeight: 800, color: '#e03c1f', marginTop: 4 }}>
+                        Total: {formatarPreco(total)}
+                      </div>
                     </div>
-                  ))}
-                </div>
-              )}
 
-              {chatPedidoId === pedido._id && (perfil === 'admin' || pedido.statusPedido === 'Saiu para entrega') && (
-                <div style={{ borderTop: '1px solid #f0f0f0' }}>
-                  <Chat
-                    mensagens={chat.mensagens}
-                    texto={chat.texto}
-                    setTexto={chat.setTexto}
-                    enviar={chat.enviar}
-                    handleKeyDown={chat.handleKeyDown}
-                    autorLocal="pizzaria"
-                    carregando={chat.carregando}
-                  />
-                </div>
-              )}
+                    <div className="pedido-contato">
+                      <strong>{pedido.contato?.nome}</strong>
+                      {pedido.contato?.telefone}
+                      {pedido.enderecoEntrega?.bairro && (
+                        <span style={{ display: 'block' }}>{pedido.enderecoEntrega.bairro}</span>
+                      )}
+                      {perfil === 'motoboy' && pedido.enderecoEntrega?.rua && (
+                        <button className="btn-mapa" onClick={() => abrirMapa(pedido.enderecoEntrega)}>
+                          🗺️ Abrir no Maps
+                        </button>
+                      )}
+                      {pedido.contato?.telefone && (
+                        <a className="btn-ligar" href={`tel:${pedido.contato.telefone.replace(/\D/g, '')}`}>
+                          📞 Ligar
+                        </a>
+                      )}
+                    </div>
 
-            </div>
-          ))}
+                    <div style={{ fontSize: '0.75rem', color: '#aaa', marginBottom: 4 }}>
+                      💳 {pedido.pagamento}
+                    </div>
+
+                    {perfil === 'motoboy' ? (
+                      pedido.statusPedido === 'Saiu para entrega' ? (
+                        <>
+                          {!pedido.motoboyPegou ? (
+                            <button className="btn-pegou" onClick={() => pegarPizza(pedido._id)}>
+                              🍕 Peguei a pizza
+                            </button>
+                          ) : (
+                            <>
+                              <span className="badge-pegou">✓ Pizza retirada</span>
+                              <button className="btn-proximo-status" onClick={() => atualizarStatus(pedido._id, 'Concluido')}>
+                                Confirmar Entrega
+                              </button>
+                              <button
+                                className={`btn-chat ${naoLidas[pedido._id] ? 'piscando' : ''}`}
+                                onClick={() => toggleChat(pedido._id)}
+                              >
+                                {chatPedidoId === pedido._id ? '✕ Fechar chat' : '💬 Chat com cliente'}
+                              </button>
+                            </>
+                          )}
+                        </>
+                      ) : (
+                        <span style={{ fontSize: '0.75rem', color: '#bbb', fontStyle: 'italic' }}>
+                          {pedido.statusPedido === 'Concluido' ? 'Entrega concluida' : 'Aguardando saida para entrega'}
+                        </span>
+                      )
+                    ) : (
+                      <>
+                        <select
+                          className="select-status"
+                          value={pedido.statusPedido}
+                          onChange={e => handleMudarStatus(pedido, e.target.value)}
+                        >
+                          {TODOS_STATUS.map(s => (
+                            <option key={s.valor} value={s.valor}>{s.label}</option>
+                          ))}
+                        </select>
+
+                        {PROXIMO_STATUS[pedido.statusPedido] && (
+                          <button
+                            className="btn-proximo-status"
+                            onClick={() => handleMudarStatus(pedido, PROXIMO_STATUS[pedido.statusPedido].valor)}
+                          >
+                            {PROXIMO_STATUS[pedido.statusPedido].label}
+                          </button>
+                        )}
+
+                        <button
+                          className={`btn-chat ${naoLidas[pedido._id] ? 'piscando' : ''}`}
+                          onClick={() => toggleChat(pedido._id)}
+                        >
+                          {chatPedidoId === pedido._id ? '✕ Fechar chat' : '💬 Chat com cliente'}
+                        </button>
+                      </>
+                    )}
+                  </div>
+                </div>
+
+                {perfil === 'admin' && pedido.historicoStatus?.length > 0 && (
+                  <div className="pedido-historico">
+                    <div className="pedido-historico-titulo">📋 Histórico de alterações</div>
+                    {pedido.historicoStatus.map((h, i) => (
+                      <div key={i} className="pedido-historico-item">
+                        <span className="historico-seta">{h.de} → {h.para}</span>
+                        <span className="historico-motivo">"{h.motivo}"</span>
+                        <span className="historico-hora">
+                          {new Date(h.criadoEm).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                {chatPedidoId === pedido._id && (perfil === 'admin' || pedido.statusPedido === 'Saiu para entrega') && (
+                  <div style={{ borderTop: '1px solid #f0f0f0' }}>
+                    <Chat
+                      mensagens={chat.mensagens}
+                      texto={chat.texto}
+                      setTexto={chat.setTexto}
+                      enviar={chat.enviar}
+                      handleKeyDown={chat.handleKeyDown}
+                      autorLocal="pizzaria"
+                      carregando={chat.carregando}
+                    />
+                  </div>
+                )}
+
+              </div>
+            );
+          })}
         </div>
       </div>
 
@@ -699,9 +631,7 @@ export default function Dashboard() {
               <p style={{ fontWeight: 700, fontSize: '1rem', color: '#222', marginBottom: 6 }}>
                 Você tem <span style={{ color: '#e03c1f' }}>{modalLojaAviso} pedido{modalLojaAviso > 1 ? 's' : ''}</span> em andamento
               </p>
-              <p style={{ fontSize: '0.82rem', color: '#999' }}>
-                Conclua todos os pedidos antes de fechar a loja.
-              </p>
+              <p style={{ fontSize: '0.82rem', color: '#999' }}>Conclua todos os pedidos antes de fechar a loja.</p>
             </div>
             <div className="modal-retrocesso-footer">
               <button className="btn-confirmar-retrocesso" onClick={() => setModalLojaAviso(false)}>Entendido</button>
@@ -718,18 +648,12 @@ export default function Dashboard() {
               <button onClick={() => setModalFecharLoja(false)}>✕</button>
             </div>
             <div className="modal-retrocesso-body" style={{ textAlign: 'center', padding: '28px 24px 16px' }}>
-              <div style={{ fontSize: '2.5rem', marginBottom: 12 }}>
-                {statusLoja === 'open' ? '🔒' : '🔓'}
-              </div>
+              <div style={{ fontSize: '2.5rem', marginBottom: 12 }}>{statusLoja === 'open' ? '🔒' : '🔓'}</div>
               <p style={{ fontWeight: 700, fontSize: '1rem', color: '#222', marginBottom: 6 }}>
-                {statusLoja === 'open'
-                  ? 'Tem certeza que deseja fechar a loja?'
-                  : 'Tem certeza que deseja abrir a loja?'}
+                {statusLoja === 'open' ? 'Tem certeza que deseja fechar a loja?' : 'Tem certeza que deseja abrir a loja?'}
               </p>
               <p style={{ fontSize: '0.82rem', color: '#999' }}>
-                {statusLoja === 'open'
-                  ? 'Os clientes não conseguirão fazer novos pedidos.'
-                  : 'A loja voltará a aceitar pedidos.'}
+                {statusLoja === 'open' ? 'Os clientes não conseguirão fazer novos pedidos.' : 'A loja voltará a aceitar pedidos.'}
               </p>
             </div>
             <div className="modal-retrocesso-footer">
