@@ -12,7 +12,7 @@ const CATEGORIAS_SUGERIDAS = ['Pizza', 'Hamburguer', 'Bebida', 'Doce', 'Entrada'
 const PRODUTO_VAZIO = {
   nome: '', descricao: '', imagem: '', categoria: 'Pizza',
   subcategorias: [], temSabores: true,
-  tamanhos: [], preco: 0, adicionais: [],
+  tamanhos: [], preco: 0, adicionais: [], outrosSabores: [],
 };
 
 function formatarPreco(valor) {
@@ -106,6 +106,18 @@ function ModalProduto({ produto, pizzariaId, onSalvar, onFechar }) {
   }
   function removeAdicional(i) {
     setDados(p => ({ ...p, adicionais: p.adicionais.filter((_, idx) => idx !== i) }));
+  }
+
+  const [saborInput, setSaborInput] = useState('');
+
+  function addSabor() {
+    const val = saborInput.trim();
+    if (!val || dados.outrosSabores?.includes(val) || val === dados.nome) return;
+    setDados(p => ({ ...p, outrosSabores: [...(p.outrosSabores || []), val] }));
+    setSaborInput('');
+  }
+  function removeSabor(s) {
+    setDados(p => ({ ...p, outrosSabores: p.outrosSabores.filter(x => x !== s) }));
   }
 
   async function salvar() {
@@ -238,6 +250,37 @@ function ModalProduto({ produto, pizzariaId, onSalvar, onFechar }) {
                   </div>
                 );
               })}
+            </>
+          )}
+
+          {ehPizza && (
+            <>
+              <div className="ca-secao-titulo" style={{ marginTop: 20 }}>
+                Outros sabores disponíveis
+                <span style={{ fontSize: '0.75rem', fontWeight: 400, color: '#aaa', marginLeft: 8 }}>
+                  (além do sabor principal "{dados.nome || '...'}")
+                </span>
+              </div>
+              <p className="ca-hint">O cliente poderá escolher entre estes sabores ao montar a pizza.</p>
+              <div className="ca-subcat-wrapper">
+                <input
+                  className="ca-campo-input"
+                  placeholder="Ex: Margherita, Calabresa, Frango..."
+                  value={saborInput}
+                  onChange={e => setSaborInput(e.target.value)}
+                  onKeyDown={e => e.key === 'Enter' && addSabor()}
+                />
+                <button className="ca-btn-add-subcat" onClick={addSabor}>+</button>
+              </div>
+              {(dados.outrosSabores?.length > 0) && (
+                <div className="ca-tags-row">
+                  {dados.outrosSabores.map(s => (
+                    <span key={s} className="ca-subcat-tag">
+                      {s} <button onClick={() => removeSabor(s)}>✕</button>
+                    </span>
+                  ))}
+                </div>
+              )}
             </>
           )}
 

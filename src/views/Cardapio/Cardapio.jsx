@@ -265,6 +265,7 @@ export default function Cardapio() {
           itemEditando={modalAberto.itemEditando}
           onFechar={handleFecharModal}
           onAdicionarAoPedido={handleConfirmarModal}
+          pizzariaId={pizzariaId}
         />
       )}
       {modalAberto && !modalAberto.produto.temSabores && (

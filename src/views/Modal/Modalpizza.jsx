@@ -5,13 +5,27 @@ function formatarPreco(valor) {
   return `R$ ${Number(valor).toFixed(2).replace('.', ',')}`;
 }
 
-export default function ModalPizza({ produto, onFechar, onAdicionarAoPedido, itemEditando }) {
+export default function ModalPizza({ produto, onFechar, onAdicionarAoPedido, itemEditando, pizzariaId }) {
   const [tamanhoSelecionado, setTamanhoSelecionado]     = useState(null);
   const [saboresSelecionados, setSaboresSelecionados]   = useState([]);
   const [adicionaisSelecionados, setAdicionaisSelecionados] = useState([]);
   const [observacao, setObservacao]                     = useState('');
   const [quantidade, setQuantidade]                     = useState(1);
   const [mostrarDropdownSabores, setMostrarDropdownSabores] = useState(false);
+  const [pizzasDisponiveis, setPizzasDisponiveis]           = useState([]);
+
+  useEffect(() => {
+    const API = import.meta.env.VITE_API_URL || 'http://localhost:3001/api';
+    const pid = pizzariaId || produto?.pizzariaId;
+    if (!pid) return;
+    fetch(`${API}/produtos?pizzariaId=${pid}`)
+      .then(r => r.json())
+      .then(data => {
+        if (Array.isArray(data))
+          setPizzasDisponiveis(data.filter(p => p.categoria === 'Pizza' && p.ativo));
+      })
+      .catch(() => {});
+  }, [pizzariaId]);
 
   useEffect(() => {
     if (itemEditando) {
@@ -51,17 +65,29 @@ export default function ModalPizza({ produto, onFechar, onAdicionarAoPedido, ite
     setSaboresSelecionados(prev => prev.filter(s => s !== sabor));
   }
 
-  const precoBase       = tamanhoSelecionado?.preco || 0;
+  // Preço mais alto entre os sabores selecionados (regra da casa)
+  const precoPorSabor = (nomeSabor) => {
+    const p = pizzasDisponiveis.find(p => p.nome === nomeSabor);
+    return p?.tamanhos?.find(t => t.tamanho === tamanhoSelecionado?.tamanho)?.preco ?? 0;
+  };
+  const precoBase = saboresSelecionados.length > 1
+    ? Math.max(...saboresSelecionados.map(precoPorSabor))
+    : (tamanhoSelecionado?.preco || 0);
   const precoAdicionais = adicionaisSelecionados.reduce((s, a) => s + a.preco, 0);
   const total           = (precoBase + precoAdicionais) * quantidade;
+
+  // Nome da pizza: "½ Palmito + ½ Brócolis" ou nome simples
+  const nomePizza = saboresSelecionados.length > 1
+    ? saboresSelecionados.map(s => `½ ${s}`).join(' + ')
+    : produto.nome;
 
   function handleConfirmar() {
     if (!tamanhoSelecionado) return;
     onAdicionarAoPedido({
       produtoId:   produto._id,
-      nomeProduto: produto.nome,
+      nomeProduto: nomePizza,
       tamanho:     tamanhoSelecionado.tamanho,
-      preco:       tamanhoSelecionado.preco,
+      preco:       precoBase,
       sabores:     saboresSelecionados,
       adicionais:  adicionaisSelecionados,
       quantidade,
@@ -130,15 +156,15 @@ export default function ModalPizza({ produto, onFechar, onAdicionarAoPedido, ite
             </div>
             {mostrarDropdownSabores && (
               <div className="sabores-dropdown">
-                {[produto.nome, ...(produto.outrosSabores || [])].map(sabor => {
-                  const jaAdicionado = saboresSelecionados.includes(sabor);
+                {pizzasDisponiveis.map(p => {
+                  const jaAdicionado = saboresSelecionados.includes(p.nome);
                   return (
                     <div
-                      key={sabor}
+                      key={p._id}
                       className={`sabor-opcao ${jaAdicionado ? 'desabilitado' : ''}`}
-                      onClick={() => !jaAdicionado && adicionarSabor(sabor)}
+                      onClick={() => !jaAdicionado && adicionarSabor(p.nome)}
                     >
-                      {sabor} {jaAdicionado ? '✓' : ''}
+                      {p.nome} {jaAdicionado ? '✓' : ''}
                     </div>
                   );
                 })}
@@ -177,6 +203,18 @@ export default function ModalPizza({ produto, onFechar, onAdicionarAoPedido, ite
           </div>
 
         </div>
+
+        {saboresSelecionados.length > 1 && (() => {
+          const precos = saboresSelecionados.map(s => ({ nome: s, preco: precoPorSabor(s) }));
+          const maior  = precos.reduce((a, b) => a.preco >= b.preco ? a : b);
+          const todos  = precos.every(p => p.preco === maior.preco);
+          if (todos) return null;
+          return (
+            <div className="modal-aviso-preco">
+              💡 O valor cobrado é o do sabor mais caro: <strong>{maior.nome}</strong> ({formatarPreco(maior.preco)})
+            </div>
+          );
+        })()}
 
         <div className="modal-footer">
           <div className="quantidade-ctrl">
