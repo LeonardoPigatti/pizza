@@ -7,6 +7,8 @@ const UsuarioSchema = new mongoose.Schema({
   senha:    { type: String, required: true },
   pizzaria: { type: mongoose.Schema.Types.ObjectId, ref: 'Pizzaria', required: true },
   perfil:   { type: String, enum: ['admin', 'motoboy'], default: 'admin' },
+  resetSenhaToken:   { type: String,  default: null },
+  resetSenhaExpira:  { type: Date,   default: null },
 }, { timestamps: true });
 
 UsuarioSchema.pre('save', async function (next) {

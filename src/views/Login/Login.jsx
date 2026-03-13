@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import './Login.css';
 
 const API = import.meta.env.VITE_API_URL || 'http://localhost:3001/api';
@@ -75,6 +75,12 @@ export default function Login() {
             {loading ? '⏳ Entrando...' : 'Entrar'}
           </button>
         </form>
+
+        <div style={{ textAlign: 'center', marginTop: 16 }}>
+          <Link to="/esqueci-senha" className="login-link">
+            Esqueci minha senha
+          </Link>
+        </div>
 
       </div>
     </div>

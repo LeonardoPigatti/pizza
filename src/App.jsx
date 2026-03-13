@@ -6,6 +6,8 @@ import Login          from './views/Login/Login.jsx';
 import Dashboard      from './views/Dashboard/Dashboard.jsx';
 import PerfilPizzaria  from './views/PerfilPizzaria/PerfilPizzaria.jsx';
 import CardapioAdmin  from './views/CardapioAdmin/Cardapioadmin.jsx';
+import EsqueciSenha  from './views/Login/EsqueciSenha.jsx'
+import RedefinirSenha from './views/Login/RedefinirSenha.jsx'
 
 export default function App() {
   return (
@@ -22,6 +24,9 @@ export default function App() {
         {/* Rota genérica por último */}
         <Route path="/:pizzariaId"           element={<Cardapio />} />
         <Route path="*" element={<p style={{ textAlign: 'center', padding: 80 }}>404 — Página não encontrada</p>} />
+
+        <Route path="/esqueci-senha"    element={<EsqueciSenha />} />
+        <Route path="/redefinir-senha"  element={<RedefinirSenha />} />
       </Routes>
     </BrowserRouter>
   );

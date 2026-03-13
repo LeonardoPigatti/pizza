@@ -70,7 +70,6 @@ app.use('/api/mensagens',  mensagemRoutes);
 app.use('/api/cupons',     cupomRoutes);
 app.use('/api/avaliacoes', avaliacaoRoutes);
 app.use('/api/financeiro', infoFinanceiraRoutes);
-
 app.get('/', (req, res) => res.json({ status: 'API Pizzaria rodando' }));
 
 const PORT = process.env.PORT || 3001;
