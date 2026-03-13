@@ -344,3 +344,73 @@
   transition: border-color 0.2s;
 }
 .perfil-campo select:focus { border-color: #e03c1f; }
+
+/* Cupom acumulável */
+.cupom-acumulavel-label {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  margin-top: 12px;
+  font-size: 0.82rem;
+  color: #555;
+  cursor: pointer;
+  user-select: none;
+}
+.cupom-acumulavel-label input[type="checkbox"] {
+  margin-top: 2px;
+  accent-color: #e03c1f;
+  width: 15px;
+  height: 15px;
+  flex-shrink: 0;
+  cursor: pointer;
+}
+.cupom-acumulavel-hint {
+  color: #aaa;
+  font-size: 0.78rem;
+}
+.cupom-badge-acumulavel {
+  display: inline-block;
+  margin-left: 8px;
+  background: #e8f5e9;
+  color: #2e7d32;
+  font-size: 0.7rem;
+  font-weight: 600;
+  padding: 2px 7px;
+  border-radius: 20px;
+}
+
+
+/* ── Dias de funcionamento ── */
+.dias-semana-grid {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-top: 4px;
+}
+
+.dia-btn {
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  border: 1.5px solid #ebebeb;
+  background: #fafafa;
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: #bbb;
+  cursor: pointer;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+  transition: border-color 0.15s, background 0.15s, color 0.15s;
+}
+
+.dia-btn:hover {
+  border-color: #e03c1f;
+  color: #e03c1f;
+  background: #fff;
+}
+
+.dia-btn.ativo {
+  border-color: #e03c1f;
+  background: #e03c1f;
+  color: #fff;
+}

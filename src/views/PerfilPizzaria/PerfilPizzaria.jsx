@@ -8,6 +8,7 @@ const VAZIO = {
   nome: '', descricao: '', telefone: '', email: '', banner: '', logo: '',
   endereco: { rua: '', numero: '', complemento: '', bairro: '', cidade: '', estado: '', cep: '' },
   horarios:  { abertura: '18:00', fechamento: '23:00' },
+  diasFuncionamento: ['Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta', 'Sábado', 'Domingo'],
   tempoMedioEntrega: 40,
   taxaEntrega: 0,
 };
@@ -63,8 +64,11 @@ export default function PerfilPizzaria() {
           abertura:   pizzariaData.horarios?.abertura   || '18:00',
           fechamento: pizzariaData.horarios?.fechamento || '23:00',
         },
-        tempoMedioEntrega: pizzariaData.tempoMedioEntrega ?? 40,
-        taxaEntrega:       pizzariaData.taxaEntrega       ?? 0,
+        tempoMedioEntrega:  pizzariaData.tempoMedioEntrega ?? 40,
+        taxaEntrega:        pizzariaData.taxaEntrega       ?? 0,
+        diasFuncionamento:  pizzariaData.diasFuncionamento?.length > 0
+          ? pizzariaData.diasFuncionamento
+          : ['Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta', 'Sábado', 'Domingo'],
       });
       if (Array.isArray(cuponsData)) setCupons(cuponsData);
     })
@@ -274,6 +278,30 @@ export default function PerfilPizzaria() {
               <label>Fechamento</label>
               <input name="horarios.fechamento" type="time" value={dados.horarios.fechamento} onChange={handle} />
             </div>
+            <div className="perfil-campo full">
+              <label>Dias de funcionamento</label>
+              <div className="dias-semana-grid">
+                {['Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta', 'Sábado', 'Domingo'].map(dia => {
+                  const ativo = dados.diasFuncionamento?.includes(dia);
+                  return (
+                    <button
+                      key={dia}
+                      type="button"
+                      className={`dia-btn ${ativo ? 'ativo' : ''}`}
+                      onClick={() => setDados(p => ({
+                        ...p,
+                        diasFuncionamento: ativo
+                          ? p.diasFuncionamento.filter(d => d !== dia)
+                          : [...(p.diasFuncionamento || []), dia]
+                      }))}
+                    >
+                      {dia.slice(0, 3)}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
             <div className="perfil-campo">
               <label>Tempo médio de entrega (min)</label>
               <input name="tempoMedioEntrega" type="number" min="10" max="120"
