@@ -78,6 +78,64 @@ function statusClass(status) {
   return '';
 }
 
+function ModalCodigo({ pedido, onConfirmar, onCancelar }) {
+  const [codigo, setCodigo]   = useState('');
+  const [erro, setErro]       = useState('');
+
+  function verificar() {
+    if (codigo.trim().toUpperCase() === pedido.codigoSeguranca) {
+      onConfirmar();
+    } else {
+      setErro('Código incorreto. Verifique com o cliente.');
+      setCodigo('');
+    }
+  }
+
+  return (
+    <div className="modal-overlay" onClick={onCancelar}>
+      <div className="modal-retrocesso" onClick={e => e.stopPropagation()}>
+        <div className="modal-retrocesso-header">
+          <span>🔐 Confirmar entrega</span>
+          <button onClick={onCancelar}>✕</button>
+        </div>
+        <div className="modal-retrocesso-body" style={{ textAlign: 'center', padding: '24px 24px 16px' }}>
+          <div style={{ fontSize: '2rem', marginBottom: 10 }}>🔐</div>
+          <p style={{ fontWeight: 700, fontSize: '1rem', color: '#222', marginBottom: 4 }}>
+            Pedido #{pedido._id.slice(-5).toUpperCase()}
+          </p>
+          <p style={{ fontSize: '0.82rem', color: '#999', marginBottom: 16 }}>
+            Peça o código de segurança ao cliente e digite abaixo para confirmar a entrega.
+          </p>
+          <input
+            style={{
+              width: '100%', textAlign: 'center', fontSize: '1.6rem', fontWeight: 900,
+              letterSpacing: '0.3em', padding: '12px', border: `2px solid ${erro ? '#ef4444' : '#ddd'}`,
+              borderRadius: 10, outline: 'none', textTransform: 'uppercase', fontFamily: 'monospace',
+            }}
+            maxLength={6}
+            value={codigo}
+            onChange={e => { setCodigo(e.target.value.toUpperCase()); setErro(''); }}
+            onKeyDown={e => e.key === 'Enter' && verificar()}
+            placeholder="_ _ _ _ _ _"
+            autoFocus
+          />
+          {erro && (
+            <div style={{ marginTop: 8, fontSize: '0.82rem', color: '#ef4444', fontWeight: 600 }}>
+              ⚠️ {erro}
+            </div>
+          )}
+        </div>
+        <div className="modal-retrocesso-footer">
+          <button className="btn-cancelar-retrocesso" onClick={onCancelar}>Cancelar</button>
+          <button className="btn-confirmar-retrocesso" onClick={verificar} disabled={codigo.length < 4}>
+            Confirmar entrega
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function ModalRetrocesso({ pedido, novoStatus, onConfirmar, onCancelar }) {
   const [motivo, setMotivo] = useState('');
   return (
@@ -129,6 +187,7 @@ export default function Dashboard() {
   const [usuario, setUsuario]                 = useState(null);
   const [chatPedidoId, setChatPedidoId]       = useState(null);
   const [modalRetrocesso, setModalRetrocesso] = useState(null);
+  const [modalCodigo, setModalCodigo]         = useState(null); // { pedidoId }
   const [menuAberto, setMenuAberto]           = useState(false);
   const [statusLoja, setStatusLoja]           = useState('open');
   const [modalFecharLoja, setModalFecharLoja] = useState(false);
@@ -227,6 +286,7 @@ export default function Dashboard() {
     const idxAtual = STATUS_ORDEM.indexOf(pedido.statusPedido);
     const idxNovo  = STATUS_ORDEM.indexOf(novoStatus);
     if (idxNovo < idxAtual) setModalRetrocesso({ pedido, novoStatus });
+    else if (novoStatus === 'Concluido' && pedido.codigoSeguranca) setModalCodigo({ pedido });
     else atualizarStatus(pedido._id, novoStatus);
   }
 
@@ -528,7 +588,10 @@ export default function Dashboard() {
                           ) : (
                             <>
                               <span className="badge-pegou">✓ Pizza retirada</span>
-                              <button className="btn-proximo-status" onClick={() => atualizarStatus(pedido._id, 'Concluido')}>
+                              <button className="btn-proximo-status" onClick={() => {
+                                if (pedido.codigoSeguranca) setModalCodigo({ pedido });
+                                else atualizarStatus(pedido._id, 'Concluido');
+                              }}>
                                 Confirmar Entrega
                               </button>
                               <button
@@ -611,6 +674,17 @@ export default function Dashboard() {
           })}
         </div>
       </div>
+
+      {modalCodigo && (
+        <ModalCodigo
+          pedido={modalCodigo.pedido}
+          onConfirmar={() => {
+            atualizarStatus(modalCodigo.pedido._id, 'Concluido');
+            setModalCodigo(null);
+          }}
+          onCancelar={() => setModalCodigo(null)}
+        />
+      )}
 
       {modalRetrocesso && (
         <ModalRetrocesso
