@@ -206,7 +206,7 @@ export default function Cardapio() {
         <div className="busca-inner">
           <div className="busca-input-wrapper">
             <span className="busca-icon">🔍</span>
-            <input className="busca-input" type="text" placeholder="Buscar..."
+            <input className="busca-input" type="text" placeholder={categoriaAtiva === 'Todas' ? 'Explore nosso cardápio completo' : `Buscar em ${categoriaAtiva}...`}
               value={busca} onChange={e => setBusca(e.target.value)} />
           </div>
         </div>
