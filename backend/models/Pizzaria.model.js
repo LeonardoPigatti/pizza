@@ -17,8 +17,9 @@ const PizzariaSchema = new mongoose.Schema({
     cep:         { type: String, default: '' },
   },
   horarios: {
-    abertura:   { type: String, default: '' },
-    fechamento: { type: String, default: '' },
+    abertura:         { type: String, default: '' }, // abertura do cardápio
+    fechamento:       { type: String, default: '' }, // fechamento do cardápio (sem novos pedidos)
+    fechamentoCaixa:  { type: String, default: '' }, // fechamento do caixa (pedidos em andamento)
   },
   tempoMedioEntrega: { type: Number, default: 40 },
 

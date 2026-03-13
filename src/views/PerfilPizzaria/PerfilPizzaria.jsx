@@ -7,7 +7,7 @@ const API = import.meta.env.VITE_API_URL || 'http://localhost:3001/api';
 const VAZIO = {
   nome: '', descricao: '', telefone: '', email: '', banner: '', logo: '',
   endereco: { rua: '', numero: '', complemento: '', bairro: '', cidade: '', estado: '', cep: '' },
-  horarios:  { abertura: '18:00', fechamento: '23:00' },
+  horarios:  { abertura: '17:00', fechamento: '23:00', fechamentoCaixa: '00:00' },
   diasFuncionamento: ['Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta', 'Sábado', 'Domingo'],
   abrirAutomatico:   false,
   tempoMedioEntrega: 40,
@@ -62,8 +62,9 @@ export default function PerfilPizzaria() {
           cep:         pizzariaData.endereco?.cep         || '',
         },
         horarios: {
-          abertura:   pizzariaData.horarios?.abertura   || '18:00',
-          fechamento: pizzariaData.horarios?.fechamento || '23:00',
+          abertura:        pizzariaData.horarios?.abertura        || '17:00',
+          fechamento:      pizzariaData.horarios?.fechamento      || '23:00',
+          fechamentoCaixa: pizzariaData.horarios?.fechamentoCaixa || '00:00',
         },
         tempoMedioEntrega:  pizzariaData.tempoMedioEntrega ?? 40,
         taxaEntrega:        pizzariaData.taxaEntrega       ?? 0,
@@ -273,12 +274,19 @@ export default function PerfilPizzaria() {
           <div className="perfil-secao-titulo">🕐 Funcionamento & Entrega</div>
           <div className="perfil-grid">
             <div className="perfil-campo">
-              <label>Abertura</label>
+              <label>Abertura do cardápio</label>
               <input name="horarios.abertura" type="time" value={dados.horarios.abertura} onChange={handle} />
+              <span className="perfil-campo-hint">Hora em que novos pedidos passam a ser aceitos</span>
             </div>
             <div className="perfil-campo">
-              <label>Fechamento</label>
+              <label>Fechamento do cardápio</label>
               <input name="horarios.fechamento" type="time" value={dados.horarios.fechamento} onChange={handle} />
+              <span className="perfil-campo-hint">Novos pedidos não são aceitos após este horário</span>
+            </div>
+            <div className="perfil-campo">
+              <label>Fechamento do caixa</label>
+              <input name="horarios.fechamentoCaixa" type="time" value={dados.horarios.fechamentoCaixa || '00:00'} onChange={handle} />
+              <span className="perfil-campo-hint">Pedidos em andamento continuam até este horário</span>
             </div>
             <div className="perfil-campo full">
               <label>Dias de funcionamento</label>
