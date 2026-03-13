@@ -50,11 +50,12 @@ const TODOS_STATUS = [
 ];
 
 const FILTROS_ADMIN = [
-  { label: 'Todos',             valor: 'todos' },
-  { label: 'Aguardando',        valor: 'Aguardando confirmacao' },
-  { label: 'Preparando',        valor: 'Preparando' },
-  { label: 'Saiu para entrega', valor: 'Saiu para entrega' },
-  { label: 'Concluido',         valor: 'Concluido' },
+  { label: 'Todos',               valor: 'todos' },
+  { label: 'Aguardando',          valor: 'Aguardando confirmacao' },
+  { label: 'Preparando',          valor: 'Preparando' },
+  { label: 'Saiu para entrega',   valor: 'Saiu para entrega' },
+  { label: '🏪 Ret. cliente',     valor: 'pronto-retirada' },
+  { label: 'Concluido',           valor: 'Concluido' },
 ];
 
 const FILTROS_MOTOBOY = [
@@ -70,12 +71,37 @@ const PROXIMO_STATUS = {
   'Concluido':              null,
 };
 
+// Retorna label/ícone do status levando em conta se é retirada
+function labelStatus(status, tipoEntrega) {
+  const ehRetirada = tipoEntrega === 'Retirada';
+  if (status === 'Saiu para entrega') return ehRetirada ? '🔔 Pronto para retirada' : '🛵 Saiu para entrega';
+  if (status === 'Aguardando confirmacao') return '⏳ Aguardando confirmação';
+  if (status === 'Preparando')             return '👨‍🍳 Preparando';
+  if (status === 'Concluido')              return ehRetirada ? '✅ Retirado' : '✅ Entregue';
+  return status;
+}
+
+// Label do botão de próximo status
+function labelProximoStatus(status, tipoEntrega) {
+  const ehRetirada = tipoEntrega === 'Retirada';
+  if (status === 'Preparando') return ehRetirada ? 'Pronto para retirada' : 'Saiu para Entrega';
+  if (status === 'Saiu para entrega') return 'Marcar como Concluído';
+  if (status === 'Aguardando confirmacao') return 'Confirmar e Preparar';
+  return '';
+}
+
 function statusClass(status) {
   if (status === 'Aguardando confirmacao') return 'aguardando';
   if (status === 'Preparando')             return 'preparando';
   if (status === 'Saiu para entrega')      return 'saiu';
   if (status === 'Concluido')              return 'concluido';
   return '';
+}
+
+// Badge visual do status no card do pedido
+function badgeStatus(pedido) {
+  const { statusPedido, tipoEntrega } = pedido;
+  return labelStatus(statusPedido, tipoEntrega);
 }
 
 function ModalCodigo({ pedido, onConfirmar, onCancelar }) {
@@ -252,10 +278,16 @@ export default function Dashboard() {
   }, []);
 
   const pedidosFiltrados = useMemo(() => {
-    if (filtro === 'todos') return pedidos;
-    if (filtro === 'aguardando-retirada') return pedidos.filter(p => p.statusPedido === 'Saiu para entrega' && !p.motoboyPegou);
-    if (filtro === 'em-entrega')          return pedidos.filter(p => p.statusPedido === 'Saiu para entrega' && p.motoboyPegou);
-    return pedidos.filter(p => p.statusPedido === filtro);
+    // Motoboy só vê pedidos de entrega
+    const base = perfil === 'motoboy'
+      ? pedidos.filter(p => p.tipoEntrega === 'Entrega')
+      : pedidos;
+    if (filtro === 'todos') return base;
+    if (filtro === 'aguardando-retirada') return base.filter(p => p.statusPedido === 'Saiu para entrega' && !p.motoboyPegou);
+    if (filtro === 'em-entrega')          return base.filter(p => p.statusPedido === 'Saiu para entrega' && p.motoboyPegou);
+    if (filtro === 'pronto-retirada')     return base.filter(p => p.statusPedido === 'Saiu para entrega' && p.tipoEntrega === 'Retirada');
+    if (filtro === 'Saiu para entrega')   return base.filter(p => p.statusPedido === 'Saiu para entrega' && p.tipoEntrega === 'Entrega');
+    return base.filter(p => p.statusPedido === filtro);
   }, [pedidos, filtro]);
 
   const totalHoje = useMemo(() => {
@@ -464,6 +496,8 @@ export default function Dashboard() {
             const count =
               f.valor === 'aguardando-retirada' ? pedidos.filter(p => p.statusPedido === 'Saiu para entrega' && !p.motoboyPegou).length :
               f.valor === 'em-entrega'          ? pedidos.filter(p => p.statusPedido === 'Saiu para entrega' && p.motoboyPegou).length :
+              f.valor === 'pronto-retirada'     ? pedidos.filter(p => p.statusPedido === 'Saiu para entrega' && p.tipoEntrega === 'Retirada').length :
+              f.valor === 'Saiu para entrega'    ? pedidos.filter(p => p.statusPedido === 'Saiu para entrega' && p.tipoEntrega === 'Entrega').length :
               f.valor !== 'todos'               ? pedidos.filter(p => p.statusPedido === f.valor).length : null;
             return (
               <button key={f.valor} className={`filtro-btn ${filtro === f.valor ? 'ativo' : ''}`} onClick={() => setFiltro(f.valor)}>
@@ -504,9 +538,9 @@ export default function Dashboard() {
                   </div>
                   <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 6 }}>
                     <span className={`pedido-status-badge ${statusClass(pedido.statusPedido)}`}>
-                      {pedido.statusPedido}
+                      {labelStatus(pedido.statusPedido, pedido.tipoEntrega)}
                     </span>
-                    {perfil === 'motoboy' && pedido.statusPedido === 'Saiu para entrega' && !pedido.motoboyPegou && (
+                    {perfil === 'motoboy' && pedido.statusPedido === 'Saiu para entrega' && pedido.tipoEntrega === 'Entrega' && !pedido.motoboyPegou && (
                       <span className="badge-aguardando-retirada">⏳ Aguardando retirada</span>
                     )}
                   </div>
@@ -581,7 +615,18 @@ export default function Dashboard() {
                     {perfil === 'motoboy' ? (
                       pedido.statusPedido === 'Saiu para entrega' ? (
                         <>
-                          {!pedido.motoboyPegou ? (
+                          {pedido.tipoEntrega === 'Retirada' ? (
+                            // Retirada: cliente vem buscar, só confirmar
+                            <>
+                              <span className="badge-aguardando-retirada">🔔 Pronto para retirada</span>
+                              <button className="btn-proximo-status" onClick={() => {
+                                if (pedido.codigoSeguranca) setModalCodigo({ pedido });
+                                else atualizarStatus(pedido._id, 'Concluido');
+                              }}>
+                                Confirmar retirada
+                              </button>
+                            </>
+                          ) : !pedido.motoboyPegou ? (
                             <button className="btn-pegou" onClick={() => pegarPizza(pedido._id)}>
                               🍕 Peguei a pizza
                             </button>
@@ -605,7 +650,9 @@ export default function Dashboard() {
                         </>
                       ) : (
                         <span style={{ fontSize: '0.75rem', color: '#bbb', fontStyle: 'italic' }}>
-                          {pedido.statusPedido === 'Concluido' ? 'Entrega concluida' : 'Aguardando saida para entrega'}
+                          {pedido.statusPedido === 'Concluido'
+                            ? (pedido.tipoEntrega === 'Retirada' ? 'Retirada concluída' : 'Entrega concluída')
+                            : (pedido.tipoEntrega === 'Retirada' ? 'Aguardando preparo' : 'Aguardando saída para entrega')}
                         </span>
                       )
                     ) : (
@@ -625,7 +672,7 @@ export default function Dashboard() {
                             className="btn-proximo-status"
                             onClick={() => handleMudarStatus(pedido, PROXIMO_STATUS[pedido.statusPedido].valor)}
                           >
-                            {PROXIMO_STATUS[pedido.statusPedido].label}
+                            {labelProximoStatus(pedido.statusPedido, pedido.tipoEntrega)}
                           </button>
                         )}
 
