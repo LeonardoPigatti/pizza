@@ -27,6 +27,7 @@ export default function Checkout({ itens, subtotal, pizzariaId, onPedidoConfirma
   const [validandoCupom, setValidandoCupom]   = useState(false);
   const [pagamento, setPagamento]           = useState('online');
   const [troco, setTroco]                   = useState('');
+  const [metodoOnline, setMetodoOnline]       = useState(null); // 'credito' | 'debito' | 'pix'
   const [salvando, setSalvando]             = useState(false);
   const [erroSalvar, setErroSalvar]         = useState(null);
   const [buscandoCep, setBuscandoCep]       = useState(false);
@@ -82,6 +83,10 @@ export default function Checkout({ itens, subtotal, pizzariaId, onPedidoConfirma
     if (s === 1) {
       if (tipoEntrega === 'retirada') return dados.nome && dados.telefone;
       return dados.nome && dados.telefone && dados.cep && dados.rua && dados.numero && dados.bairro;
+    }
+    if (s === 2) {
+      if (pagamento === 'online') return !!metodoOnline;
+      return true;
     }
     return true;
   }
@@ -367,6 +372,28 @@ export default function Checkout({ itens, subtotal, pizzariaId, onPedidoConfirma
                   </div>
                 ))}
               </div>
+              {pagamento === 'online' && (
+                <div className="online-metodos">
+                  <div className="online-metodos-titulo">Escolha a forma de pagamento online:</div>
+                  <div className="online-metodos-grid">
+                    {[
+                      { id: 'credito', icone: '💳', titulo: 'Crédito',  desc: 'À vista ou parcelado' },
+                      { id: 'debito',  icone: '🏦', titulo: 'Débito',   desc: 'Débito em conta' },
+                      { id: 'pix',     icone: '⚡', titulo: 'Pix',      desc: 'Aprovação instantânea' },
+                    ].map(m => (
+                      <div
+                        key={m.id}
+                        className={`online-metodo-opcao ${metodoOnline === m.id ? 'selecionado' : ''}`}
+                        onClick={() => setMetodoOnline(m.id)}
+                      >
+                        <div className="online-metodo-icone">{m.icone}</div>
+                        <div className="online-metodo-titulo">{m.titulo}</div>
+                        <div className="online-metodo-desc">{m.desc}</div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
               {pagamento === 'dinheiro' && (
                 <div className="troco-wrapper">
                   <div className="form-group">
@@ -436,7 +463,7 @@ export default function Checkout({ itens, subtotal, pizzariaId, onPedidoConfirma
               {tipoEntrega === 'entrega'
                 ? `🛵 Entrega em ${dados.rua}, ${dados.numero} – ${dados.bairro}`
                 : '🏪 Retirada na loja'}<br />
-              💳 {pagamento === 'online' ? 'Pagamento online' : pagamento === 'dinheiro' ? `Dinheiro${troco ? ` (troco p/ ${troco})` : ''}` : 'Máquina na entrega'}<br />
+              💳 {pagamento === 'online' ? `Online — ${metodoOnline === 'pix' ? 'Pix' : metodoOnline === 'credito' ? 'Crédito' : 'Débito'}` : pagamento === 'dinheiro' ? `Dinheiro${troco ? ` (troco p/ ${troco})` : ''}` : 'Máquina na entrega'}<br />
               🕐 Estimativa: {tempoEstimado}
             </div>
           </div>

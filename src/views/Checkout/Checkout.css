@@ -585,3 +585,146 @@
 }
 
 .form-input.input-erro { border-color: #ef4444; }
+
+/* Múltiplos cupons */
+.cupons-aplicados-lista {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+.cupom-aplicado-tag {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: #e8f5e9;
+  color: #2e7d32;
+  font-size: 0.8rem;
+  font-weight: 600;
+  padding: 5px 10px;
+  border-radius: 20px;
+  border: 1px solid #a5d6a7;
+}
+.cupom-remover {
+  background: none;
+  border: none;
+  color: #888;
+  cursor: pointer;
+  font-size: 0.75rem;
+  padding: 0;
+  line-height: 1;
+}
+.cupom-remover:hover { color: #e03c1f; }
+
+/* Métodos de pagamento online */
+.online-metodos {
+  margin-top: 14px;
+  padding-top: 14px;
+  border-top: 1px solid #f0f0f0;
+  animation: fadeIn 0.2s ease;
+}
+.online-metodos-titulo {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: #888;
+  margin-bottom: 10px;
+}
+.online-metodos-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+}
+.online-metodo-opcao {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 14px 8px;
+  border: 2px solid #eee;
+  border-radius: 12px;
+  cursor: pointer;
+  transition: all 0.15s;
+  text-align: center;
+}
+.online-metodo-opcao:hover {
+  border-color: #e03c1f;
+  background: #fff5f3;
+}
+.online-metodo-opcao.selecionado {
+  border-color: #e03c1f;
+  background: #fff5f3;
+}
+.online-metodo-icone {
+  font-size: 1.6rem;
+}
+.online-metodo-titulo {
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: #222;
+}
+.online-metodo-desc {
+  font-size: 0.7rem;
+  color: #aaa;
+}
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(-6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* ── Métodos de pagamento online ── */
+.online-metodos {
+  margin-top: 14px;
+  padding-top: 14px;
+  border-top: 1px solid #f0f0f0;
+  animation: cardEntrada 0.2s ease;
+}
+.online-metodos-titulo {
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: #888;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+  margin-bottom: 12px;
+}
+.online-metodos-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+}
+.online-metodo-opcao {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 14px 8px;
+  border: 2px solid #e8e8e8;
+  border-radius: 12px;
+  cursor: pointer;
+  text-align: center;
+  background: #fff;
+  transition: all 0.18s;
+}
+.online-metodo-opcao:hover {
+  border-color: #e03c1f;
+  background: #fff8f7;
+}
+.online-metodo-opcao.selecionado {
+  border-color: #e03c1f;
+  background: #fff8f7;
+}
+.online-metodo-icone { font-size: 1.6rem; }
+.online-metodo-titulo {
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: #1a1a1a;
+}
+.online-metodo-desc {
+  font-size: 0.7rem;
+  color: #aaa;
+}
+
+@media (max-width: 520px) {
+  .online-metodos-grid { grid-template-columns: repeat(3, 1fr); gap: 8px; }
+  .online-metodo-opcao { padding: 12px 6px; }
+  .online-metodo-titulo { font-size: 0.78rem; }
+}
