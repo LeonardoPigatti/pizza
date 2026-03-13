@@ -29,6 +29,7 @@ const PizzariaSchema = new mongoose.Schema({
   status:       { type: String, enum: ['open', 'closed'], default: 'open' },
   taxaEntrega:        { type: Number, default: 0 },
   diasFuncionamento:  { type: [String], default: ['Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta', 'Sábado', 'Domingo'] },
+  abrirAutomatico:    { type: Boolean, default: false },
 }, { timestamps: true });
 
 module.exports = mongoose.model('Pizzaria', PizzariaSchema);

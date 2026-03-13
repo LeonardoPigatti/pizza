@@ -9,6 +9,7 @@ const VAZIO = {
   endereco: { rua: '', numero: '', complemento: '', bairro: '', cidade: '', estado: '', cep: '' },
   horarios:  { abertura: '18:00', fechamento: '23:00' },
   diasFuncionamento: ['Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta', 'Sábado', 'Domingo'],
+  abrirAutomatico:   false,
   tempoMedioEntrega: 40,
   taxaEntrega: 0,
 };
@@ -69,6 +70,7 @@ export default function PerfilPizzaria() {
         diasFuncionamento:  pizzariaData.diasFuncionamento?.length > 0
           ? pizzariaData.diasFuncionamento
           : ['Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta', 'Sábado', 'Domingo'],
+        abrirAutomatico:    pizzariaData.abrirAutomatico ?? false,
       });
       if (Array.isArray(cuponsData)) setCupons(cuponsData);
     })
@@ -300,6 +302,26 @@ export default function PerfilPizzaria() {
                   );
                 })}
               </div>
+            </div>
+
+            <div className="perfil-campo full">
+              <label>Abertura automática</label>
+              <label className="perfil-toggle-label">
+                <input
+                  type="checkbox"
+                  className="perfil-toggle-check"
+                  checked={dados.abrirAutomatico || false}
+                  onChange={e => setDados(p => ({ ...p, abrirAutomatico: e.target.checked }))}
+                />
+                <span className="perfil-toggle-texto">
+                  Abrir e fechar automaticamente nos dias e horários configurados acima
+                </span>
+              </label>
+              {dados.abrirAutomatico && (
+                <span className="perfil-campo-hint">
+                  ✅ O sistema vai abrir a loja automaticamente no horário de abertura e fechar no horário de fechamento, nos dias selecionados.
+                </span>
+              )}
             </div>
 
             <div className="perfil-campo">
