@@ -66,6 +66,7 @@ const PedidoSchema = new mongoose.Schema({
   motoboyPegou:        { type: Boolean, default: false },
   ipCliente:           { type: String, default: '' },
   avaliacao:           { type: Number, default: null },
+  codigoSeguranca:     { type: String },
 }, { timestamps: true });
 
 module.exports = mongoose.model('Pedido', PedidoSchema);

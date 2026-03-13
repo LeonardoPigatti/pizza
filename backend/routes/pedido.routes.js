@@ -3,6 +3,13 @@ const Pedido = require('../models/Pedido.model');
 
 const STATUS_ORDEM = ['Aguardando confirmacao', 'Preparando', 'Saiu para entrega', 'Concluido'];
 
+function gerarCodigoSeguranca() {
+  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; // sem O, 0, I, 1 pra evitar confusão
+  let codigo = '';
+  for (let i = 0; i < 6; i++) codigo += chars[Math.floor(Math.random() * chars.length)];
+  return codigo;
+}
+
 // GET /api/pedidos
 router.get('/', async (req, res) => {
   try {
@@ -28,7 +35,8 @@ router.get('/:id', async (req, res) => {
 router.post('/', async (req, res) => {
   try {
     const ip = req.headers['x-forwarded-for']?.split(',')[0] || req.socket.remoteAddress || '';
-    const pedido = await Pedido.create({ ...req.body, ipCliente: ip });
+    const codigoSeguranca = gerarCodigoSeguranca();
+    const pedido = await Pedido.create({ ...req.body, ipCliente: ip, codigoSeguranca });
     res.status(201).json(pedido);
   } catch (err) {
     res.status(400).json({ erro: err.message });
@@ -51,7 +59,6 @@ router.patch('/:id/status', async (req, res) => {
       return res.status(400).json({ erro: 'Motivo obrigatório para retornar o status' });
 
     const update = { statusPedido };
-
     if (ehRetrocesso) {
       update.$push = {
         historicoStatus: {
