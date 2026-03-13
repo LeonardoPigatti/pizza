@@ -58,8 +58,13 @@ const PedidoSchema = new mongoose.Schema({
   pagamento:           { type: String, enum: ['Cartao online', 'Dinheiro na entrega'], required: true },
   statusPedido:        {
     type:    String,
-    enum:    ['Aguardando confirmacao', 'Preparando', 'Saiu para entrega', 'Concluido'],
+    enum:    ['Aguardando confirmacao', 'Preparando', 'Saiu para entrega', 'Concluido', 'Cancelado'],
     default: 'Aguardando confirmacao',
+  },
+  cancelamento: {
+    motivoCancelamento: { type: String, default: null },
+    canceladoPor:       { type: String, enum: ['pizzaria', 'cliente'], default: null },
+    canceladoEm:        { type: Date, default: null },
   },
   tempoEsperaEstimado: { type: Number, default: 40 },
   historicoStatus:     { type: [HistoricoStatusSchema], default: [] },

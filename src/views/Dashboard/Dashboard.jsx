@@ -95,6 +95,7 @@ function statusClass(status) {
   if (status === 'Preparando')             return 'preparando';
   if (status === 'Saiu para entrega')      return 'saiu';
   if (status === 'Concluido')              return 'concluido';
+  if (status === 'Cancelado')              return 'cancelado';
   return '';
 }
 
@@ -162,6 +163,65 @@ function ModalCodigo({ pedido, onConfirmar, onCancelar }) {
   );
 }
 
+function ModalCancelar({ pedido, onConfirmar, onCancelar }) {
+  const [motivo, setMotivo] = useState('');
+
+  const pagamentosOnline = ['online', 'cartao online', 'pix', 'crédito', 'débito'];
+  const ehOnline = pagamentosOnline.some(p => pedido.pagamento?.toLowerCase().includes(p));
+
+  return (
+    <div className="modal-overlay" onClick={onCancelar}>
+      <div className="modal-retrocesso" onClick={e => e.stopPropagation()}>
+        <div className="modal-retrocesso-header">
+          <span>🚫 Cancelar pedido #{pedido._id.slice(-5).toUpperCase()}</span>
+          <button onClick={onCancelar}>✕</button>
+        </div>
+        <div className="modal-retrocesso-body">
+          {ehOnline ? (
+            <div style={{ textAlign: 'center', padding: '16px 0' }}>
+              <div style={{ fontSize: '2rem', marginBottom: 10 }}>🔒</div>
+              <p style={{ fontWeight: 700, color: '#222' }}>Não é possível cancelar</p>
+              <p style={{ fontSize: '0.82rem', color: '#999', marginTop: 4 }}>
+                Este pedido foi pago online e não pode ser cancelado pelo sistema.
+              </p>
+            </div>
+          ) : (
+            <>
+              <p style={{ fontSize: '0.85rem', color: '#666', marginBottom: 12 }}>
+                Informe o motivo do cancelamento. O cliente verá essa mensagem.
+              </p>
+              <textarea
+                style={{
+                  width: '100%', minHeight: 80, border: '1.5px solid #e0e0e0',
+                  borderRadius: 10, padding: '10px 12px', fontSize: '0.88rem',
+                  fontFamily: 'inherit', resize: 'vertical', outline: 'none',
+                  boxSizing: 'border-box',
+                }}
+                placeholder="Ex: Produto em falta, encerramos o horário..."
+                value={motivo}
+                onChange={e => setMotivo(e.target.value)}
+              />
+            </>
+          )}
+        </div>
+        <div className="modal-retrocesso-footer">
+          <button className="btn-cancelar-retrocesso" onClick={onCancelar}>Voltar</button>
+          {!ehOnline && (
+            <button
+              className="btn-confirmar-retrocesso"
+              style={{ background: '#ef4444' }}
+              onClick={() => motivo.trim() && onConfirmar(motivo)}
+              disabled={!motivo.trim()}
+            >
+              Confirmar cancelamento
+            </button>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function ModalRetrocesso({ pedido, novoStatus, onConfirmar, onCancelar }) {
   const [motivo, setMotivo] = useState('');
   return (
@@ -214,6 +274,7 @@ export default function Dashboard() {
   const [chatPedidoId, setChatPedidoId]       = useState(null);
   const [modalRetrocesso, setModalRetrocesso] = useState(null);
   const [modalCodigo, setModalCodigo]         = useState(null); // { pedidoId }
+  const [modalCancelar, setModalCancelar]     = useState(null); // { pedido }
   const [menuAberto, setMenuAberto]           = useState(false);
   const [statusLoja, setStatusLoja]           = useState('open');
   const [modalFecharLoja, setModalFecharLoja] = useState(false);
@@ -311,6 +372,22 @@ export default function Dashboard() {
       setPedidos(prev => prev.map(p => p._id === pedidoId ? data : p));
     } catch (err) {
       alert('Erro ao atualizar status: ' + err.message);
+    }
+  }
+
+  async function cancelarPedido(pedido, motivo) {
+    try {
+      const token = localStorage.getItem('token');
+      const res  = await fetch(`${API}/pedidos/${pedido._id}/cancelar`, {
+        method:  'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body:    JSON.stringify({ motivo, canceladoPor: 'pizzaria' }),
+      });
+      const data = await res.json();
+      if (!res.ok) { alert(data.erro); return; }
+      setPedidos(prev => prev.map(p => p._id === pedido._id ? data : p));
+    } catch (err) {
+      alert('Erro ao cancelar pedido: ' + err.message);
     }
   }
 
@@ -538,7 +615,7 @@ export default function Dashboard() {
                   </div>
                   <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 6 }}>
                     <span className={`pedido-status-badge ${statusClass(pedido.statusPedido)}`}>
-                      {labelStatus(pedido.statusPedido, pedido.tipoEntrega)}
+                      {pedido.statusPedido === 'Cancelado' ? '🚫 Cancelado' : labelStatus(pedido.statusPedido, pedido.tipoEntrega)}
                     </span>
                     {perfil === 'motoboy' && pedido.statusPedido === 'Saiu para entrega' && pedido.tipoEntrega === 'Entrega' && !pedido.motoboyPegou && (
                       <span className="badge-aguardando-retirada">⏳ Aguardando retirada</span>
@@ -682,10 +759,28 @@ export default function Dashboard() {
                         >
                           {chatPedidoId === pedido._id ? '✕ Fechar chat' : '💬 Chat com cliente'}
                         </button>
+                        {pedido.statusPedido !== 'Concluido' && pedido.statusPedido !== 'Cancelado' && (
+                          <button
+                            className="btn-cancelar-pedido"
+                            onClick={() => setModalCancelar({ pedido })}
+                          >
+                            🚫 Cancelar pedido
+                          </button>
+                        )}
                       </>
                     )}
                   </div>
                 </div>
+
+                {pedido.statusPedido === 'Cancelado' && pedido.cancelamento?.motivoCancelamento && (
+                  <div className="pedido-cancelamento-info">
+                    <span className="cancelamento-icone">🚫</span>
+                    <div>
+                      <div className="cancelamento-titulo">Pedido cancelado pela pizzaria</div>
+                      <div className="cancelamento-motivo">"{pedido.cancelamento.motivoCancelamento}"</div>
+                    </div>
+                  </div>
+                )}
 
                 {perfil === 'admin' && pedido.historicoStatus?.length > 0 && (
                   <div className="pedido-historico">
@@ -721,6 +816,17 @@ export default function Dashboard() {
           })}
         </div>
       </div>
+
+      {modalCancelar && (
+        <ModalCancelar
+          pedido={modalCancelar.pedido}
+          onConfirmar={motivo => {
+            cancelarPedido(modalCancelar.pedido, motivo);
+            setModalCancelar(null);
+          }}
+          onCancelar={() => setModalCancelar(null)}
+        />
+      )}
 
       {modalCodigo && (
         <ModalCodigo

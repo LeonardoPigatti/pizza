@@ -162,8 +162,37 @@ export default function StatusPedido() {
   const idxAtual     = indiceStatus(statusAtual);
   const ehRetirada   = pedido.tipoEntrega === 'Retirada';
   const steps        = ehRetirada ? STATUS_STEPS_RETIRADA : STATUS_STEPS;
-  const pedidoPronto = statusAtual === 'Concluido';
+  const pedidoPronto    = statusAtual === 'Concluido';
+  const pedidoCancelado = statusAtual === 'Cancelado';
   const pizzariaId   = pedido.pizzas?.[0]?.produtoId?.pizzariaId || pedido.pizzariaId;
+
+  if (pedidoCancelado) return (
+    <div className="status-page">
+      <div className="status-header">
+        <button className="status-btn-voltar" onClick={() => navigate(-1)}>←</button>
+        <span className="status-header-titulo">Pedido Cancelado</span>
+      </div>
+      <div className="status-layout">
+        <div className="status-card status-cancelado-card">
+          <div className="status-cancelado-icone">🚫</div>
+          <div className="status-cancelado-titulo">Pedido cancelado</div>
+          <div className="status-cancelado-numero">#{pedido._id.toString().slice(-5).toUpperCase()}</div>
+          {pedido.cancelamento?.motivoCancelamento && (
+            <>
+              <div className="status-cancelado-label">Motivo informado pela pizzaria:</div>
+              <div className="status-cancelado-motivo">"{pedido.cancelamento.motivoCancelamento}"</div>
+            </>
+          )}
+          <div className="status-cancelado-desc">
+            Se tiver dúvidas, entre em contato com a pizzaria.
+          </div>
+        </div>
+        <button className="status-btn-cardapio" onClick={() => navigate(-3)}>
+          🍕 Fazer novo pedido
+        </button>
+      </div>
+    </div>
+  );
 
   return (
     <div className="status-page">

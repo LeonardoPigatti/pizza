@@ -91,4 +91,56 @@ router.patch('/:id/pegar', async (req, res) => {
   }
 });
 
+// POST /api/pedidos/:id/cancelar
+router.post('/:id/cancelar', async (req, res) => {
+  try {
+    const { motivo, canceladoPor } = req.body;
+    const pedido = await Pedido.findById(req.params.id);
+    if (!pedido) return res.status(404).json({ erro: 'Pedido não encontrado' });
+
+    // Não pode cancelar se já cancelado ou concluído
+    if (pedido.statusPedido === 'Cancelado')
+      return res.status(400).json({ erro: 'Pedido já cancelado.' });
+    if (pedido.statusPedido === 'Concluido')
+      return res.status(400).json({ erro: 'Não é possível cancelar um pedido já concluído.' });
+
+    // Não pode cancelar se pagamento online
+    const pagamentosOnline = ['online', 'Cartao online', 'Pix', 'Crédito', 'Débito'];
+    if (pagamentosOnline.some(p => pedido.pagamento?.toLowerCase().includes(p.toLowerCase())))
+      return res.status(400).json({ erro: 'Pedidos pagos online não podem ser cancelados.' });
+
+    if (!motivo?.trim())
+      return res.status(400).json({ erro: 'Motivo do cancelamento é obrigatório.' });
+
+    // Regra do cliente: só pode cancelar se passou 100% do tempo estimado
+    if (canceladoPor === 'cliente') {
+      const agora       = Date.now();
+      const criado      = new Date(pedido.createdAt).getTime();
+      const estimadoMs  = (pedido.tempoEsperaEstimado || 40) * 60 * 1000;
+      const decorrido   = agora - criado;
+      if (decorrido < estimadoMs)
+        return res.status(400).json({
+          erro: `Cancelamento disponível apenas após ${pedido.tempoEsperaEstimado} min. Aguarde mais ${Math.ceil((estimadoMs - decorrido) / 60000)} min.`
+        });
+    }
+
+    const atualizado = await Pedido.findByIdAndUpdate(
+      req.params.id,
+      {
+        statusPedido: 'Cancelado',
+        cancelamento: {
+          motivoCancelamento: motivo.trim(),
+          canceladoPor,
+          canceladoEm: new Date(),
+        },
+      },
+      { new: true, runValidators: false }
+    ).populate('pizzas.produtoId');
+
+    res.json(atualizado);
+  } catch (err) {
+    res.status(500).json({ erro: err.message });
+  }
+});
+
 module.exports = router;
