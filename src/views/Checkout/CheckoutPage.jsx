@@ -5,16 +5,20 @@ export default function CheckoutPage() {
   const { state } = useLocation();
   const navigate  = useNavigate();
 
-  const itens       = state?.itens       || [];
-  const subtotal    = state?.subtotal    || 0;
-  const pizzariaId  = state?.pizzariaId  || '';
+  const itens      = state?.itens      || [];
+  const subtotal   = state?.subtotal   || 0;
+  const pizzariaId = state?.pizzariaId || '';
+
+  function handlePedidoConfirmado() {
+    localStorage.removeItem('carrinho_itens');
+  }
 
   return (
     <Checkout
       itens={itens}
       subtotal={subtotal}
       pizzariaId={pizzariaId}
-      onPedidoConfirmado={() => {}}
+      onPedidoConfirmado={handlePedidoConfirmado}
     />
   );
 }

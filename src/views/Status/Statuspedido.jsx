@@ -158,13 +158,13 @@ export default function StatusPedido() {
     </div>
   );
 
-  const statusAtual  = pedido.statusPedido;
-  const idxAtual     = indiceStatus(statusAtual);
-  const ehRetirada   = pedido.tipoEntrega === 'Retirada';
-  const steps        = ehRetirada ? STATUS_STEPS_RETIRADA : STATUS_STEPS;
+  const statusAtual     = pedido.statusPedido;
+  const idxAtual        = indiceStatus(statusAtual);
+  const ehRetirada      = pedido.tipoEntrega === 'Retirada';
+  const steps           = ehRetirada ? STATUS_STEPS_RETIRADA : STATUS_STEPS;
   const pedidoPronto    = statusAtual === 'Concluido';
   const pedidoCancelado = statusAtual === 'Cancelado';
-  const pizzariaId   = pedido.pizzas?.[0]?.produtoId?.pizzariaId || pedido.pizzariaId;
+  const pizzariaId      = pedido.pizzariaId || pedido.pizzas?.[0]?.produtoId?.pizzariaId;
 
   if (pedidoCancelado) return (
     <div className="status-page">
@@ -187,7 +187,7 @@ export default function StatusPedido() {
             Se tiver dúvidas, entre em contato com a pizzaria.
           </div>
         </div>
-        <button className="status-btn-cardapio" onClick={() => navigate(-3)}>
+        <button className="status-btn-cardapio" onClick={() => navigate(`/${pizzariaId}`)}>
           🍕 Fazer novo pedido
         </button>
       </div>
@@ -344,7 +344,7 @@ export default function StatusPedido() {
           <span>📲</span> Compartilhar link no WhatsApp
         </button>
 
-        <button className="status-btn-cardapio" onClick={() => navigate(-3)}>
+        <button className="status-btn-cardapio" onClick={() => navigate(`/${pizzariaId}`)}>
           🍕 Fazer novo pedido
         </button>
 

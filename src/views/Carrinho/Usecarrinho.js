@@ -1,7 +1,19 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
+
+const STORAGE_KEY = 'carrinho_itens';
 
 export function useCarrinho() {
-  const [itens, setItens] = useState([]);
+  const [itens, setItens] = useState(() => {
+    try {
+      const salvo = localStorage.getItem(STORAGE_KEY);
+      return salvo ? JSON.parse(salvo) : [];
+    } catch { return []; }
+  });
+
+  // Persiste no localStorage sempre que itens mudar
+  useEffect(() => {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(itens));
+  }, [itens]);
 
   const adicionarItem = useCallback((item) => {
     setItens(prev => [...prev, { ...item, id: crypto.randomUUID() }]);
@@ -20,7 +32,6 @@ export function useCarrinho() {
     );
   }, []);
 
-  // Substitui um item existente mantendo o mesmo id
   const editarItem = useCallback((id, dadosNovos) => {
     setItens(prev => prev.map(item => item.id === id ? { ...dadosNovos, id } : item));
   }, []);
@@ -29,7 +40,10 @@ export function useCarrinho() {
     setItens(prev => prev.filter(item => item.id !== id));
   }, []);
 
-  const limparCarrinho = useCallback(() => setItens([]), []);
+  const limparCarrinho = useCallback(() => {
+    setItens([]);
+    localStorage.removeItem(STORAGE_KEY);
+  }, []);
 
   const totalItens = itens.reduce((s, i) => s + i.quantidade, 0);
   const subtotal   = itens.reduce((s, i) => s + i.totalItem, 0);
