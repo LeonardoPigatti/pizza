@@ -4,7 +4,7 @@ import './Cardapio.css';
 import ModalPizza from '../Modal/Modalpizza.jsx';
 import ModalProduto from '../Modal/ModalProduto.jsx';
 import Carrinho, { CarrinhoFAB } from '../Carrinho/Carrinho.jsx';
-import { useCarrinho } from '../Carrinho/useCarrinho.js';
+import { useCarrinho } from '../Carrinho/Usecarrinho.js';
 
 const API = import.meta.env.VITE_API_URL || 'http://localhost:3001/api';
 
