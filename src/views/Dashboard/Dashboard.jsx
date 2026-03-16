@@ -511,6 +511,9 @@ export default function Dashboard() {
                 <>
                   <div className="menu-admin-overlay" onClick={() => setMenuAberto(false)} />
                   <div className="menu-admin-dropdown">
+                    <button className="menu-admin-item" onClick={() => { setMenuAberto(false); navigate(`/painel/${pizzariaId}`); }}>
+                      📊 Painel Analítico
+                    </button>
                     <button className="menu-admin-item" onClick={() => { setMenuAberto(false); navigate(`/perfil/${pizzariaId}`); }}>
                       ✏️ Editar perfil
                     </button>
