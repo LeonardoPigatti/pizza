@@ -107,5 +107,60 @@
   margin-top: 4px;
 }
 
-.btn-login:hover { background: #c4331a; transform: translateY(-1px); }
+.btn-login:hover    { background: #c4331a; transform: translateY(-1px); }
 .btn-login:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+
+/* ── Link esqueci senha ── */
+.login-link {
+  color: #e03c1f;
+  font-size: 0.85rem;
+  font-weight: 600;
+  text-decoration: none;
+  background: none;
+  border: none;
+  cursor: pointer;
+  transition: opacity 0.15s;
+}
+.login-link:hover { opacity: 0.75; text-decoration: underline; }
+
+/* ── Subtítulo (usado em EsqueciSenha e RedefinirSenha) ── */
+.login-titulo {
+  font-size: 1.2rem;
+  font-weight: 900;
+  color: #1a1a1a;
+  text-align: center;
+  margin-bottom: 6px;
+}
+
+.login-subtitulo {
+  font-size: 0.84rem;
+  color: #aaa;
+  text-align: center;
+  margin-bottom: 20px;
+  line-height: 1.5;
+}
+
+/* ── Botão genérico (EsqueciSenha / RedefinirSenha) ── */
+.login-btn {
+  background: #e03c1f;
+  color: #fff;
+  border: none;
+  border-radius: 12px;
+  padding: 14px;
+  font-size: 0.95rem;
+  font-weight: 800;
+  cursor: pointer;
+  width: 100%;
+  transition: background 0.2s, transform 0.15s;
+  font-family: inherit;
+}
+.login-btn:hover    { background: #c4331a; transform: translateY(-1px); }
+.login-btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+
+/* ── Campo genérico (EsqueciSenha / RedefinirSenha) ── */
+.login-campo {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-bottom: 4px;
+}

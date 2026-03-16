@@ -343,4 +343,27 @@
   flex: 1;
 }
 
+.modal-aviso-preco {
+  margin: 0 20px 12px;
+  padding: 10px 14px;
+  background: #fff8e1;
+  border: 1px solid #ffe082;
+  border-radius: 8px;
+  font-size: 0.8rem;
+  color: #7a5c00;
+  line-height: 1.4;
+}
+
+/* ── Aviso de preço (pizza meio a meio) ── */
+.modal-aviso-preco {
+  margin: 0 24px 12px;
+  padding: 10px 14px;
+  background: #fff8e1;
+  border: 1px solid #ffe082;
+  border-radius: 10px;
+  font-size: 0.8rem;
+  color: #7a5c00;
+  line-height: 1.4;
+}
+
 .btn-adicionar-pedido:hover { background: #c4331a; }
