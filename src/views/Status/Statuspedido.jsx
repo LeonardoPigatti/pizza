@@ -197,10 +197,6 @@ export default function StatusPedido() {
   return (
     <div className="status-page">
 
-      <div className="status-header">
-        <button className="status-btn-voltar" onClick={() => navigate(-1)}>←</button>
-        <span className="status-header-titulo">Acompanhar Pedido</span>
-      </div>
 
       <div className="status-layout">
 
