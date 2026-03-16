@@ -4,12 +4,19 @@ import './PerfilPizzaria.css';
 
 const API = import.meta.env.VITE_API_URL || 'http://localhost:3001/api';
 
+const DIAS = ['Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta', 'Sábado', 'Domingo'];
+
+const HORARIO_DIA_VAZIO = { ativo: true, abertura: '17:00', fechamento: '23:00', fechamentoCaixa: '00:00' };
+
+function horariosPorDiaVazio() {
+  return Object.fromEntries(DIAS.map(d => [d, { ...HORARIO_DIA_VAZIO }]));
+}
+
 const VAZIO = {
   nome: '', descricao: '', telefone: '', email: '', banner: '', logo: '',
   endereco: { rua: '', numero: '', complemento: '', bairro: '', cidade: '', estado: '', cep: '' },
-  horarios:  { abertura: '17:00', fechamento: '23:00', fechamentoCaixa: '00:00' },
-  diasFuncionamento: ['Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta', 'Sábado', 'Domingo'],
-  abrirAutomatico:   false,
+  horariosPorDia: horariosPorDiaVazio(),
+  abrirAutomatico: false,
   tempoMedioEntrega: 40,
   taxaEntrega: 0,
 };
@@ -18,6 +25,15 @@ const CUPOM_VAZIO = { codigo: '', tipo: 'percentual', valor: '', acumulavel: fal
 
 function formatarPreco(v) {
   return `R$ ${Number(v).toFixed(2).replace('.', ',')}`;
+}
+
+function normalizeHorariosPorDia(raw) {
+  const base = horariosPorDiaVazio();
+  if (!raw) return base;
+  DIAS.forEach(d => {
+    if (raw[d]) base[d] = { ...HORARIO_DIA_VAZIO, ...raw[d] };
+  });
+  return base;
 }
 
 export default function PerfilPizzaria() {
@@ -44,34 +60,27 @@ export default function PerfilPizzaria() {
     Promise.all([
       fetch(`${API}/pizzarias/${pizzariaId}`).then(r => r.json()),
       fetch(`${API}/cupons?pizzariaId=${pizzariaId}`, { headers: { Authorization: `Bearer ${token}` } }).then(r => r.json()),
-    ]).then(([pizzariaData, cuponsData]) => {
+    ]).then(([pd, cuponsData]) => {
       setDados({
-        nome:      pizzariaData.nome      || '',
-        descricao: pizzariaData.descricao || '',
-        telefone:  pizzariaData.telefone  || '',
-        email:     pizzariaData.email     || '',
-        banner:    pizzariaData.banner    || '',
-        logo:      pizzariaData.logo      || '',
+        nome:      pd.nome      || '',
+        descricao: pd.descricao || '',
+        telefone:  pd.telefone  || '',
+        email:     pd.email     || '',
+        banner:    pd.banner    || '',
+        logo:      pd.logo      || '',
         endereco: {
-          rua:         pizzariaData.endereco?.rua         || '',
-          numero:      pizzariaData.endereco?.numero      || '',
-          complemento: pizzariaData.endereco?.complemento || '',
-          bairro:      pizzariaData.endereco?.bairro      || '',
-          cidade:      pizzariaData.endereco?.cidade      || '',
-          estado:      pizzariaData.endereco?.estado      || '',
-          cep:         pizzariaData.endereco?.cep         || '',
+          rua:         pd.endereco?.rua         || '',
+          numero:      pd.endereco?.numero      || '',
+          complemento: pd.endereco?.complemento || '',
+          bairro:      pd.endereco?.bairro      || '',
+          cidade:      pd.endereco?.cidade      || '',
+          estado:      pd.endereco?.estado      || '',
+          cep:         pd.endereco?.cep         || '',
         },
-        horarios: {
-          abertura:        pizzariaData.horarios?.abertura        || '17:00',
-          fechamento:      pizzariaData.horarios?.fechamento      || '23:00',
-          fechamentoCaixa: pizzariaData.horarios?.fechamentoCaixa || '00:00',
-        },
-        tempoMedioEntrega:  pizzariaData.tempoMedioEntrega ?? 40,
-        taxaEntrega:        pizzariaData.taxaEntrega       ?? 0,
-        diasFuncionamento:  pizzariaData.diasFuncionamento?.length > 0
-          ? pizzariaData.diasFuncionamento
-          : ['Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta', 'Sábado', 'Domingo'],
-        abrirAutomatico:    pizzariaData.abrirAutomatico ?? false,
+        horariosPorDia:    normalizeHorariosPorDia(pd.horariosPorDia),
+        tempoMedioEntrega: pd.tempoMedioEntrega ?? 40,
+        taxaEntrega:       pd.taxaEntrega       ?? 0,
+        abrirAutomatico:   pd.abrirAutomatico   ?? false,
       });
       if (Array.isArray(cuponsData)) setCupons(cuponsData);
     })
@@ -84,12 +93,31 @@ export default function PerfilPizzaria() {
     if (name.startsWith('endereco.')) {
       const campo = name.split('.')[1];
       setDados(p => ({ ...p, endereco: { ...p.endereco, [campo]: value } }));
-    } else if (name.startsWith('horarios.')) {
-      const campo = name.split('.')[1];
-      setDados(p => ({ ...p, horarios: { ...p.horarios, [campo]: value } }));
     } else {
       setDados(p => ({ ...p, [name]: value }));
     }
+  }
+
+  function handleHorarioDia(dia, campo, valor) {
+    setDados(p => ({
+      ...p,
+      horariosPorDia: {
+        ...p.horariosPorDia,
+        [dia]: { ...p.horariosPorDia[dia], [campo]: valor },
+      },
+    }));
+  }
+
+  // Aplicar mesmo horário para todos os dias ativos
+  function aplicarParaTodos(diaOrigem) {
+    const h = dados.horariosPorDia[diaOrigem];
+    setDados(p => {
+      const novo = { ...p.horariosPorDia };
+      DIAS.forEach(d => {
+        if (novo[d].ativo) novo[d] = { ...novo[d], abertura: h.abertura, fechamento: h.fechamento, fechamentoCaixa: h.fechamentoCaixa };
+      });
+      return { ...p, horariosPorDia: novo };
+    });
   }
 
   async function handleCep(e) {
@@ -269,69 +297,106 @@ export default function PerfilPizzaria() {
           </div>
         </section>
 
-        {/* Horários e Entrega */}
+        {/* Horários por dia */}
         <section className="perfil-secao">
-          <div className="perfil-secao-titulo">🕐 Funcionamento & Entrega</div>
-          <div className="perfil-grid">
-            <div className="perfil-campo">
-              <label>Abertura do cardápio</label>
-              <input name="horarios.abertura" type="time" value={dados.horarios.abertura} onChange={handle} />
-              <span className="perfil-campo-hint">Hora em que novos pedidos passam a ser aceitos</span>
+          <div className="perfil-secao-titulo">🕐 Horários de funcionamento</div>
+
+          <div className="horarios-tabela">
+            {/* Cabeçalho */}
+            <div className="horarios-header">
+              <div className="hd-dia">Dia</div>
+              <div className="hd-campo">Abertura cardápio</div>
+              <div className="hd-campo">Fechamento cardápio</div>
+              <div className="hd-campo">Fechamento caixa</div>
+              <div className="hd-acao"></div>
             </div>
-            <div className="perfil-campo">
-              <label>Fechamento do cardápio</label>
-              <input name="horarios.fechamento" type="time" value={dados.horarios.fechamento} onChange={handle} />
-              <span className="perfil-campo-hint">Novos pedidos não são aceitos após este horário</span>
-            </div>
-            <div className="perfil-campo">
-              <label>Fechamento do caixa</label>
-              <input name="horarios.fechamentoCaixa" type="time" value={dados.horarios.fechamentoCaixa || '00:00'} onChange={handle} />
-              <span className="perfil-campo-hint">Pedidos em andamento continuam até este horário</span>
-            </div>
-            <div className="perfil-campo full">
-              <label>Dias de funcionamento</label>
-              <div className="dias-semana-grid">
-                {['Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta', 'Sábado', 'Domingo'].map(dia => {
-                  const ativo = dados.diasFuncionamento?.includes(dia);
-                  return (
+
+            {DIAS.map(dia => {
+              const h = dados.horariosPorDia[dia];
+              return (
+                <div key={dia} className={`horarios-linha ${!h.ativo ? 'inativo' : ''}`}>
+                  <div className="hd-dia">
                     <button
-                      key={dia}
                       type="button"
-                      className={`dia-btn ${ativo ? 'ativo' : ''}`}
-                      onClick={() => setDados(p => ({
-                        ...p,
-                        diasFuncionamento: ativo
-                          ? p.diasFuncionamento.filter(d => d !== dia)
-                          : [...(p.diasFuncionamento || []), dia]
-                      }))}
+                      className={`dia-toggle-btn ${h.ativo ? 'ativo' : ''}`}
+                      onClick={() => handleHorarioDia(dia, 'ativo', !h.ativo)}
+                      title={h.ativo ? 'Clique para desativar este dia' : 'Clique para ativar este dia'}
                     >
                       {dia.slice(0, 3)}
                     </button>
-                  );
-                })}
-              </div>
-            </div>
+                  </div>
+                  <div className="hd-campo">
+                    <input
+                      type="time"
+                      value={h.abertura}
+                      disabled={!h.ativo}
+                      onChange={e => handleHorarioDia(dia, 'abertura', e.target.value)}
+                      className="horario-input"
+                    />
+                  </div>
+                  <div className="hd-campo">
+                    <input
+                      type="time"
+                      value={h.fechamento}
+                      disabled={!h.ativo}
+                      onChange={e => handleHorarioDia(dia, 'fechamento', e.target.value)}
+                      className="horario-input"
+                    />
+                  </div>
+                  <div className="hd-campo">
+                    <input
+                      type="time"
+                      value={h.fechamentoCaixa}
+                      disabled={!h.ativo}
+                      onChange={e => handleHorarioDia(dia, 'fechamentoCaixa', e.target.value)}
+                      className="horario-input"
+                    />
+                  </div>
+                  <div className="hd-acao">
+                    {h.ativo && (
+                      <button
+                        type="button"
+                        className="btn-copiar-horario"
+                        title="Aplicar estes horários para todos os dias ativos"
+                        onClick={() => aplicarParaTodos(dia)}
+                      >
+                        ⬇ todos
+                      </button>
+                    )}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
 
-            <div className="perfil-campo full">
-              <label>Abertura automática</label>
-              <label className="perfil-toggle-label">
-                <input
-                  type="checkbox"
-                  className="perfil-toggle-check"
-                  checked={dados.abrirAutomatico || false}
-                  onChange={e => setDados(p => ({ ...p, abrirAutomatico: e.target.checked }))}
-                />
-                <span className="perfil-toggle-texto">
-                  Abrir e fechar automaticamente nos dias e horários configurados acima
-                </span>
-              </label>
-              {dados.abrirAutomatico && (
-                <span className="perfil-campo-hint">
-                  ✅ O sistema vai abrir a loja automaticamente no horário de abertura e fechar no horário de fechamento, nos dias selecionados.
-                </span>
-              )}
-            </div>
+          <div className="horarios-legenda">
+            <span>Clique no dia para ativar/desativar · </span>
+            <span>⬇ todos aplica o horário daquela linha para todos os dias ativos</span>
+          </div>
 
+          {/* Abertura automática */}
+          <div className="perfil-campo full" style={{ marginTop: 16 }}>
+            <label>Abertura automática</label>
+            <label className="perfil-toggle-label">
+              <input
+                type="checkbox"
+                className="perfil-toggle-check"
+                checked={dados.abrirAutomatico || false}
+                onChange={e => setDados(p => ({ ...p, abrirAutomatico: e.target.checked }))}
+              />
+              <span className="perfil-toggle-texto">
+                Abrir e fechar automaticamente conforme os horários configurados acima
+              </span>
+            </label>
+            {dados.abrirAutomatico && (
+              <span className="perfil-campo-hint">
+                ✅ O sistema vai abrir e fechar a loja automaticamente respeitando o horário de cada dia.
+              </span>
+            )}
+          </div>
+
+          {/* Tempo e taxa */}
+          <div className="perfil-grid" style={{ marginTop: 16 }}>
             <div className="perfil-campo">
               <label>Tempo médio de entrega (min)</label>
               <input name="tempoMedioEntrega" type="number" min="10" max="120"
@@ -355,7 +420,6 @@ export default function PerfilPizzaria() {
         {/* Cupons */}
         <section className="perfil-secao">
           <div className="perfil-secao-titulo">🎟️ Cupons de desconto</div>
-
           <div className="cupom-form">
             <div className="cupom-form-row">
               <div className="perfil-campo" style={{ flex: 2 }}>
@@ -392,8 +456,6 @@ export default function PerfilPizzaria() {
                 </button>
               </div>
             </div>
-
-            {/* Checkbox acumulável */}
             <label className="cupom-acumulavel-label">
               <input
                 type="checkbox"
@@ -409,7 +471,6 @@ export default function PerfilPizzaria() {
                 </span>
               </span>
             </label>
-
             {erroCupom && <div className="cupom-erro">⚠️ {erroCupom}</div>}
           </div>
 

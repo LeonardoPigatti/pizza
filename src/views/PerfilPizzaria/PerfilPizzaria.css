@@ -210,12 +210,6 @@
 
 @keyframes perfilSpin { to { transform: rotate(360deg); } }
 
-@media (max-width: 500px) {
-  .perfil-grid    { grid-template-columns: 1fr; }
-  .perfil-footer  { display: block; }
-  .perfil-btn-salvar { display: none; }
-}
-
 .perfil-cep-status {
   font-size: 0.75rem;
   font-weight: 500;
@@ -223,6 +217,26 @@
   color: #888;
 }
 .perfil-cep-status.erro { color: #e03c1f; }
+
+.perfil-campo-hint {
+  font-size: 0.75rem;
+  color: #aaa;
+  margin-top: 4px;
+}
+
+.perfil-campo select {
+  width: 100%;
+  border: 1.5px solid #ebebeb;
+  border-radius: 10px;
+  padding: 10px 12px;
+  font-family: inherit;
+  font-size: 0.88rem;
+  color: #1a1a1a;
+  background: #fafafa;
+  outline: none;
+  transition: border-color 0.15s;
+}
+.perfil-campo select:focus { border-color: #e03c1f; }
 
 /* ── Cupons ── */
 .cupom-form { margin-bottom: 20px; }
@@ -246,7 +260,7 @@
   font-weight: 700;
   cursor: pointer;
   white-space: nowrap;
-  transition: background 0.2s;
+  transition: background 0.15s;
   height: 42px;
 }
 .cupom-btn-criar:hover    { background: #c4331a; }
@@ -273,9 +287,9 @@
   gap: 12px;
   padding: 12px 16px;
   border-radius: 10px;
-  border: 1.5px solid #e0e0e0;
-  background: #fff;
-  transition: opacity 0.2s;
+  border: 1.5px solid #ebebeb;
+  background: #fafafa;
+  transition: opacity 0.15s;
 }
 .cupom-item.inativo { opacity: 0.5; }
 
@@ -285,7 +299,7 @@
   color: #222;
   letter-spacing: 0.5px;
   font-family: monospace;
-  background: #f5f5f5;
+  background: #f0f0f0;
   padding: 3px 10px;
   border-radius: 6px;
   min-width: 90px;
@@ -307,7 +321,7 @@
   border-radius: 8px;
   padding: 5px 12px;
   cursor: pointer;
-  transition: background 0.2s;
+  transition: background 0.15s;
 }
 .cupom-toggle.desativar { background: #fef2f2; color: #e03c1f; }
 .cupom-toggle.desativar:hover { background: #fde8e8; }
@@ -321,31 +335,10 @@
   font-size: 1rem;
   padding: 4px;
   opacity: 0.6;
-  transition: opacity 0.2s;
+  transition: opacity 0.15s;
 }
 .cupom-deletar:hover { opacity: 1; }
 
-.perfil-campo-hint {
-  font-size: 0.75rem;
-  color: #aaa;
-  margin-top: 4px;
-}
-
-.perfil-campo select {
-  width: 100%;
-  border: 1.5px solid #e0e0e0;
-  border-radius: 8px;
-  padding: 10px 12px;
-  font-family: 'Inter', sans-serif;
-  font-size: 0.88rem;
-  color: #222;
-  background: #fff;
-  outline: none;
-  transition: border-color 0.2s;
-}
-.perfil-campo select:focus { border-color: #e03c1f; }
-
-/* Cupom acumulável */
 .cupom-acumulavel-label {
   display: flex;
   align-items: flex-start;
@@ -379,19 +372,45 @@
   border-radius: 20px;
 }
 
-
-/* ── Dias de funcionamento ── */
-.dias-semana-grid {
+/* ── Tabela de horários por dia ── */
+.horarios-tabela {
   display: flex;
-  gap: 8px;
-  flex-wrap: wrap;
-  margin-top: 4px;
+  flex-direction: column;
+  gap: 4px;
 }
 
-.dia-btn {
-  width: 42px;
-  height: 42px;
-  border-radius: 50%;
+.horarios-header {
+  display: grid;
+  grid-template-columns: 60px 1fr 1fr 1fr 76px;
+  gap: 8px;
+  padding: 0 4px 8px;
+  border-bottom: 1.5px solid #f0f0f0;
+}
+
+.hd-dia, .hd-campo, .hd-acao {
+  font-size: 0.68rem;
+  font-weight: 700;
+  color: #bbb;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+}
+
+.horarios-linha {
+  display: grid;
+  grid-template-columns: 60px 1fr 1fr 1fr 76px;
+  gap: 8px;
+  align-items: center;
+  padding: 5px 4px;
+  border-radius: 10px;
+  transition: background 0.15s;
+}
+.horarios-linha:hover  { background: #fafafa; }
+.horarios-linha.inativo { opacity: 0.4; }
+
+.dia-toggle-btn {
+  width: 48px;
+  height: 34px;
+  border-radius: 8px;
   border: 1.5px solid #ebebeb;
   background: #fafafa;
   font-size: 0.7rem;
@@ -402,15 +421,92 @@
   letter-spacing: 0.3px;
   transition: border-color 0.15s, background 0.15s, color 0.15s;
 }
+.dia-toggle-btn:hover { border-color: #e03c1f; color: #e03c1f; background: #fff; }
+.dia-toggle-btn.ativo { background: #e03c1f; border-color: #e03c1f; color: #fff; }
 
-.dia-btn:hover {
+.horario-input {
+  width: 100%;
+  border: 1.5px solid #ebebeb;
+  border-radius: 10px;
+  padding: 8px 10px;
+  font-size: 0.82rem;
+  font-family: inherit;
+  color: #1a1a1a;
+  background: #fafafa;
+  outline: none;
+  transition: border-color 0.15s, background 0.15s;
+}
+.horario-input:focus   { border-color: #e03c1f; background: #fff; }
+.horario-input:disabled { background: #f5f5f5; color: #ccc; cursor: not-allowed; }
+
+.btn-copiar-horario {
+  font-size: 0.68rem;
+  font-weight: 700;
+  color: #888;
+  background: #fafafa;
+  border: 1.5px solid #ebebeb;
+  border-radius: 8px;
+  padding: 5px 8px;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: border-color 0.15s, background 0.15s, color 0.15s;
+}
+.btn-copiar-horario:hover {
+  background: #fff8f7;
   border-color: #e03c1f;
   color: #e03c1f;
-  background: #fff;
 }
 
-.dia-btn.ativo {
+.horarios-legenda {
+  font-size: 0.7rem;
+  color: #ccc;
+  margin-top: 8px;
+  padding: 0 4px;
+}
+
+/* ── Toggle abertura automática ── */
+.perfil-toggle-label {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  cursor: pointer;
+  padding: 10px 12px;
+  border: 1.5px solid #ebebeb;
+  border-radius: 10px;
+  background: #fafafa;
+  transition: border-color 0.15s, background 0.15s;
+}
+.perfil-toggle-label:hover {
   border-color: #e03c1f;
-  background: #e03c1f;
-  color: #fff;
+  background: #fff;
+}
+.perfil-toggle-check {
+  width: 16px;
+  height: 16px;
+  accent-color: #e03c1f;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+.perfil-toggle-texto {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #444;
+}
+
+/* ── Responsivo ── */
+@media (max-width: 560px) {
+  .horarios-header { display: none; }
+  .horarios-linha {
+    grid-template-columns: 52px 1fr 1fr;
+    gap: 6px;
+  }
+  .horarios-linha > div:nth-child(4),
+  .horarios-linha > div:nth-child(5) { display: none; }
+}
+
+@media (max-width: 500px) {
+  .perfil-grid       { grid-template-columns: 1fr; }
+  .perfil-campo.full { grid-column: 1; }
+  .perfil-footer     { display: block; }
+  .perfil-btn-salvar { display: none; }
 }

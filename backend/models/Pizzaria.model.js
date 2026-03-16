@@ -1,5 +1,12 @@
 const mongoose = require('mongoose');
 
+const HorarioDiaSchema = new mongoose.Schema({
+  ativo:           { type: Boolean, default: true },
+  abertura:        { type: String, default: '17:00' },
+  fechamento:      { type: String, default: '23:00' },
+  fechamentoCaixa: { type: String, default: '00:00' },
+}, { _id: false });
+
 const PizzariaSchema = new mongoose.Schema({
   nome:        { type: String, required: true },
   descricao:   { type: String, default: '' },
@@ -16,21 +23,30 @@ const PizzariaSchema = new mongoose.Schema({
     estado:      { type: String, default: '' },
     cep:         { type: String, default: '' },
   },
+  // Horário global (legado — mantido para compatibilidade)
   horarios: {
-    abertura:         { type: String, default: '' }, // abertura do cardápio
-    fechamento:       { type: String, default: '' }, // fechamento do cardápio (sem novos pedidos)
-    fechamentoCaixa:  { type: String, default: '' }, // fechamento do caixa (pedidos em andamento)
+    abertura:        { type: String, default: '' },
+    fechamento:      { type: String, default: '' },
+    fechamentoCaixa: { type: String, default: '' },
+  },
+  // Horários por dia da semana
+  horariosPorDia: {
+    Segunda: { type: HorarioDiaSchema, default: () => ({}) },
+    Terça:   { type: HorarioDiaSchema, default: () => ({}) },
+    Quarta:  { type: HorarioDiaSchema, default: () => ({}) },
+    Quinta:  { type: HorarioDiaSchema, default: () => ({}) },
+    Sexta:   { type: HorarioDiaSchema, default: () => ({}) },
+    Sábado:  { type: HorarioDiaSchema, default: () => ({}) },
+    Domingo: { type: HorarioDiaSchema, default: () => ({}) },
   },
   tempoMedioEntrega: { type: Number, default: 40 },
-
-  // Avaliações
-  avaliacaoMedia: { type: Number, default: 0 },
-  avaliacaoTotal: { type: Number, default: 0 },
-  avaliacaoCount: { type: Number, default: 0 },
-  status:       { type: String, enum: ['open', 'closed'], default: 'open' },
-  taxaEntrega:        { type: Number, default: 0 },
-  diasFuncionamento:  { type: [String], default: ['Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta', 'Sábado', 'Domingo'] },
-  abrirAutomatico:    { type: Boolean, default: false },
+  avaliacaoMedia:    { type: Number, default: 0 },
+  avaliacaoTotal:    { type: Number, default: 0 },
+  avaliacaoCount:    { type: Number, default: 0 },
+  status:            { type: String, enum: ['open', 'closed'], default: 'open' },
+  taxaEntrega:       { type: Number, default: 0 },
+  diasFuncionamento: { type: [String], default: ['Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta', 'Sábado', 'Domingo'] },
+  abrirAutomatico:   { type: Boolean, default: false },
 }, { timestamps: true });
 
 module.exports = mongoose.model('Pizzaria', PizzariaSchema);

@@ -70,6 +70,7 @@ app.use('/api/mensagens',  mensagemRoutes);
 app.use('/api/cupons',     cupomRoutes);
 app.use('/api/avaliacoes', avaliacaoRoutes);
 app.use('/api/financeiro', infoFinanceiraRoutes);
+
 app.get('/', (req, res) => res.json({ status: 'API Pizzaria rodando' }));
 
 const PORT = process.env.PORT || 3001;
@@ -91,10 +92,12 @@ conectarBanco().then(() => {
       const pizzarias = await Pizzaria.find({ abrirAutomatico: true });
 
       for (const p of pizzarias) {
-        const diaAtivo          = (p.diasFuncionamento || []).includes(diaAtual);
-        const abertura          = p.horarios?.abertura        || '17:00';
-        const fechCardapio      = p.horarios?.fechamento      || '23:00';
-        const fechCaixa         = p.horarios?.fechamentoCaixa || '00:00';
+        // Pega horário do dia atual (por dia ou fallback global)
+        const hDia        = p.horariosPorDia?.[diaAtual];
+        const diaAtivo    = hDia ? hDia.ativo !== false : (p.diasFuncionamento || []).includes(diaAtual);
+        const abertura    = hDia?.abertura        || p.horarios?.abertura        || '17:00';
+        const fechCardapio= hDia?.fechamento      || p.horarios?.fechamento      || '23:00';
+        const fechCaixa   = hDia?.fechamentoCaixa || p.horarios?.fechamentoCaixa || '00:00';
 
         // Cardápio aberto: dentro do horário de funcionamento
         const cardapioAberto = diaAtivo && horaAtual >= abertura && horaAtual < fechCardapio;
