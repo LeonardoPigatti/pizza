@@ -4,7 +4,6 @@
   padding-bottom: 60px;
 }
 
-/* ── Header ── */
 .faq-header {
   display: flex;
   align-items: center;
@@ -36,7 +35,6 @@
 .faq-titulo    { font-size: 1rem; font-weight: 800; color: #1a1a1a; }
 .faq-subtitulo { font-size: 0.72rem; color: #aaa; margin-top: 1px; }
 
-/* ── Layout ── */
 .faq-layout {
   max-width: 680px;
   margin: 20px auto 0;
@@ -46,7 +44,6 @@
   gap: 16px;
 }
 
-/* ── Busca ── */
 .faq-busca-wrapper {
   display: flex;
   align-items: center;
@@ -80,7 +77,6 @@
 }
 .faq-busca-limpar:hover { color: #e03c1f; }
 
-/* ── Categoria ── */
 .faq-categoria {
   background: #fff;
   border-radius: 16px;
@@ -98,7 +94,6 @@
   border-bottom: 1px solid #f5f5f5;
 }
 
-/* ── Item ── */
 .faq-item {
   border-bottom: 1px solid #f5f5f5;
   transition: background 0.15s;
@@ -151,7 +146,6 @@
   to   { opacity: 1; transform: translateY(0); }
 }
 
-/* ── Card de contato ── */
 .faq-contato-card {
   background: #fff;
   border-radius: 16px;
@@ -184,7 +178,6 @@
 }
 .faq-contato-btn:hover { background: #c4331a; }
 
-/* ── Vazio ── */
 .faq-vazio {
   text-align: center;
   padding: 40px 20px;
@@ -192,7 +185,6 @@
   font-size: 0.88rem;
 }
 
-/* ── Botão no banner do cardápio ── */
 .banner-faq-btn {
   margin-top: 12px;
   background: rgba(255, 255, 255, 0.18);

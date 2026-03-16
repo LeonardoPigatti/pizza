@@ -768,9 +768,9 @@ export default function Dashboard() {
                         )}
                       </>
                     )}
-                    </div>{/* fim ações col-direita */}
-                  </div>{/* fim pedido-col-direita */}
-                </div>{/* fim pedido-card-body */}
+                    </div>
+                  </div>
+                </div>
 
                 {pedido.statusPedido === 'Cancelado' && pedido.cancelamento?.motivoCancelamento && (
                   <div className="pedido-cancelamento-info">

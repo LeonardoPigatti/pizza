@@ -81,7 +81,7 @@ export default function Cardapio() {
         const produtosData = await resProdutos.json();
         if (!resProdutos.ok) throw new Error(produtosData.erro || 'Erro ao buscar produtos');
         setPizzaria(pizzariaData);
-        document.title = pizzariaData.nome ? `${pizzariaData.nome} 🍕` : 'Cardápio';
+        document.title = pizzariaData.nome ? `PizzaWeb - ${pizzariaData.nome} - Cardápio` : 'PizzaWeb - Cardápio';
         setProdutos(produtosData.filter(p => p.ativo !== false));
       } catch (err) {
         setErro(err.message);

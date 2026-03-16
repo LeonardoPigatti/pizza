@@ -1,4 +1,3 @@
-/* ── Chat ── */
 .chat-wrapper {
   display: flex;
   flex-direction: column;
@@ -28,7 +27,6 @@
   text-align: center;
 }
 
-/* ── Bolha ── */
 .chat-bolha-wrapper {
   display: flex;
   flex-direction: column;
@@ -71,7 +69,6 @@
   padding: 0 4px;
 }
 
-/* ── Input ── */
 .chat-input-wrapper {
   display: flex;
   gap: 8px;

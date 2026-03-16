@@ -10,7 +10,6 @@ export function useCarrinho() {
     } catch { return []; }
   });
 
-  // Persiste no localStorage sempre que itens mudar
   useEffect(() => {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(itens));
   }, [itens]);

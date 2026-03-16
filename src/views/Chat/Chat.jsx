@@ -5,20 +5,9 @@ function formatarHora(iso) {
   return new Date(iso).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
 }
 
-/**
- * Chat reutilizável.
- * Props:
- *  - mensagens   : array de { texto, autor, hora }
- *  - texto       : string do input controlado
- *  - setTexto    : setter
- *  - enviar      : fn()
- *  - handleKeyDown: fn(e)
- *  - autorLocal  : 'cliente' | 'pizzaria' — quem está usando esse componente
- */
 export default function Chat({ mensagens, texto, setTexto, enviar, handleKeyDown, autorLocal, carregando }) {
   const fimRef = useRef(null);
 
-  // Scroll automático para última mensagem
   useEffect(() => {
     fimRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [mensagens]);
