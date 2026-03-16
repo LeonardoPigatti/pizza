@@ -7,11 +7,11 @@ const { conectarBanco } = require('./config/database');
 
 const produtoRoutes   = require('./routes/Produto.routes');
 const pedidoRoutes    = require('./routes/pedido.routes');
-const pizzariaRoutes  = require('./routes/pizzaria.routes');
+const pizzariaRoutes  = require('./routes/Pizzaria.routes');
 const authRoutes      = require('./routes/auth.routes');
 const mensagemRoutes       = require('./routes/mensagem.routes');
-const cupomRoutes          = require('./routes/cupom.routes');
-const avaliacaoRoutes      = require('./routes/avaliacao.routes');
+const cupomRoutes          = require('./routes/Cupom.routes');
+const avaliacaoRoutes      = require('./routes/Avaliacao.routes');
 const infoFinanceiraRoutes = require('./routes/infoFinanceira.routes');
 
 const Mensagem  = require('./models/Mensagem.model');
