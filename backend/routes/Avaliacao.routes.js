@@ -35,7 +35,7 @@ router.post('/:pedidoId', async (req, res) => {
       await Pizzaria.findByIdAndUpdate(pizzariaId, {
         avaliacaoTotal: novoTotal,
         avaliacaoCount: novoCount,
-        avaliacaoMedia: Math.round(novaMedia * 10) / 10, // arredonda 1 casa decimal
+        avaliacaoMedia: Math.round(novaMedia * 10) / 10,
       });
     }
 

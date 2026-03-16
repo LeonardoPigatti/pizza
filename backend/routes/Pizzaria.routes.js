@@ -35,8 +35,6 @@ router.patch('/:id', async (req, res) => {
   }
 });
 
-// Adicionar esta rota no pizzaria.routes.js, antes do module.exports:
-
 // PATCH /api/pizzarias/:id/status — abre ou fecha a loja
 router.patch('/:id/status', authMiddleware, async (req, res) => {
   try {

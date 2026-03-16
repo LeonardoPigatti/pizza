@@ -68,7 +68,6 @@ router.post('/esqueci-senha', async (req, res) => {
     if (!email) return res.status(400).json({ erro: 'Email obrigatório' });
 
     const usuario = await Usuario.findOne({ email: email.toLowerCase().trim() });
-    // Sempre retorna sucesso para não revelar se o email existe
     if (!usuario) return res.json({ mensagem: 'Se o email existir, você receberá o link em breve.' });
 
     // Gerar token único
@@ -128,12 +127,12 @@ router.post('/redefinir-senha', async (req, res) => {
 
     const usuario = await Usuario.findOne({
       resetSenhaToken:  token,
-      resetSenhaExpira: { $gt: new Date() }, // token ainda válido
+      resetSenhaExpira: { $gt: new Date() },
     });
 
     if (!usuario) return res.status(400).json({ erro: 'Link inválido ou expirado. Solicite um novo.' });
 
-    usuario.senha            = novaSenha; // o pre-save vai fazer o hash
+    usuario.senha            = novaSenha;
     usuario.resetSenhaToken  = null;
     usuario.resetSenhaExpira = null;
     await usuario.save();

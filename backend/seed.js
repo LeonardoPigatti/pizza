@@ -116,11 +116,9 @@ async function seed() {
   await Pizzaria.deleteMany({});
   console.log('🗑️  Collections limpas');
 
-  // Insere produtos
   const produtosSalvos = await Produto.insertMany(produtos);
   console.log(`🍕 ${produtosSalvos.length} produtos inseridos`);
 
-  // Insere pizzaria com referência aos produtos
   const pizzaria = await Pizzaria.create({
     nome: 'La Pizza',
     endereco: {
