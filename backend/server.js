@@ -12,7 +12,7 @@ const authRoutes      = require('./routes/auth.routes');
 const mensagemRoutes       = require('./routes/mensagem.routes');
 const cupomRoutes          = require('./routes/Cupom.routes');
 const avaliacaoRoutes      = require('./routes/Avaliacao.routes');
-const infoFinanceiraRoutes = require('./routes/infofinanceira.routes');
+const infoFinanceiraRoutes = require('./routes/Infofinanceira.routes');
 
 const Mensagem  = require('./models/Mensagem.model');
 const Pizzaria  = require('./models/Pizzaria.model');
