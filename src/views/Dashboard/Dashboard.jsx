@@ -627,58 +627,59 @@ export default function Dashboard() {
                 </div>
 
                 <div className="pedido-card-body">
-                  <div className="pedido-itens">
-                    {pedido.pizzas.map((pizza, i) => (
-                      <div key={i} className="pedido-item-linha">
-                        <strong>{pizza.quantidade}× {pizza.nomeProduto || pizza.produtoId?.nome || 'Produto'}</strong>
-                        {pizza.tamanho && ` · ${pizza.tamanho}`}
-                        <div className="pedido-item-detalhe">
-                          {pizza.sabores?.join(', ')}
-                          {pizza.adicionais?.length > 0 && ` + ${pizza.adicionais.map(a => a.nome).join(', ')}`}
-                          {pizza.observacao && ` — ${pizza.observacao}`}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
 
-                  <div className="pedido-card-direita">
-                    <div className="pedido-valores-detalhe" style={{ textAlign: 'right', marginBottom: 8, borderTop: '1px solid #eee', paddingTop: 8 }}>
-
-                      <div style={{ fontSize: '0.75rem', color: '#888' }}>
-                        Subtotal: {formatarPreco(subtotal)}
-                      </div>
-
-                      {pedido.tipoEntrega === 'Entrega' && (
-                        <div style={{ fontSize: '0.75rem', color: freteGratis ? '#27ae60' : '#666' }}>
-                          Entrega: {freteGratis ? 'Grátis 🎉' : formatarPreco(taxaEfetiva)}
-                        </div>
-                      )}
-
-                      {cupons.filter(c => c.tipo !== 'frete_gratis' && c.desconto > 0).map((c, i) => (
-                        <div key={i} style={{ fontSize: '0.75rem', color: '#27ae60', fontWeight: 'bold' }}>
-                          {c.codigo}: − {formatarPreco(c.desconto)}
+                  {/* Coluna esquerda: itens + contato */}
+                  <div className="pedido-col-esquerda">
+                    <div className="pedido-itens">
+                      {pedido.pizzas.map((pizza, i) => (
+                        <div key={i} className="pedido-item-linha">
+                          <strong>{pizza.quantidade}× {pizza.nomeProduto || pizza.produtoId?.nome || 'Produto'}</strong>
+                          {pizza.tamanho && ` · ${pizza.tamanho}`}
+                          <div className="pedido-item-detalhe">
+                            {pizza.sabores?.join(', ')}
+                            {pizza.adicionais?.length > 0 && ` + ${pizza.adicionais.map(a => a.nome).join(', ')}`}
+                            {pizza.observacao && ` — ${pizza.observacao}`}
+                          </div>
                         </div>
                       ))}
-                      {cupons.filter(c => c.tipo === 'frete_gratis').map((c, i) => (
-                        <div key={i} style={{ fontSize: '0.75rem', color: '#27ae60', fontWeight: 'bold' }}>
-                          {c.codigo}: frete grátis
-                        </div>
-                      ))}
-
-                      <div style={{ fontSize: '1.1rem', fontWeight: 800, color: '#e03c1f', marginTop: 4 }}>
-                        Total: {formatarPreco(total)}
-                      </div>
                     </div>
-
                     <div className="pedido-contato">
                       <strong>{pedido.contato?.nome}</strong>
-                      {pedido.contato?.telefone}
-                      {pedido.enderecoEntrega?.bairro && (
-                        <span style={{ display: 'block' }}>{pedido.enderecoEntrega.bairro}</span>
+                      <span>{pedido.contato?.telefone}</span>
+                      {pedido.enderecoEntrega?.bairro && <span>{pedido.enderecoEntrega.bairro}</span>}
+                    </div>
+                  </div>
+
+                  {/* Coluna direita: valores + ações */}
+                  <div className="pedido-col-direita">
+
+                    {/* Valores */}
+                    <div className="pedido-valores">
+                      <div className="pedido-valores-linha">
+                        <span>Subtotal</span><span>{formatarPreco(subtotal)}</span>
+                      </div>
+                      {pedido.tipoEntrega === 'Entrega' && (
+                        <div className={`pedido-valores-linha ${freteGratis ? 'desconto' : ''}`}>
+                          <span>Entrega</span>
+                          <span>{freteGratis ? 'Grátis 🎉' : formatarPreco(taxaEfetiva)}</span>
+                        </div>
                       )}
+                      {cupons.filter(c => c.tipo !== 'frete_gratis' && c.desconto > 0).map((c, i) => (
+                        <div key={i} className="pedido-valores-linha desconto">
+                          <span>{c.codigo}</span><span>− {formatarPreco(c.desconto)}</span>
+                        </div>
+                      ))}
+                      <div className="pedido-valores-linha total">
+                        <span>Total</span><span>{formatarPreco(total)}</span>
+                      </div>
+                      <div className="pedido-valores-pagamento">💳 {pedido.pagamento}</div>
+                    </div>
+
+                    {/* Ações */}
+                    <div className="pedido-col-direita">
                       {perfil === 'motoboy' && pedido.enderecoEntrega?.rua && (
                         <button className="btn-mapa" onClick={() => abrirMapa(pedido.enderecoEntrega)}>
-                          🗺️ Abrir no Maps
+                          🗺️ Maps
                         </button>
                       )}
                       {pedido.contato?.telefone && (
@@ -686,11 +687,6 @@ export default function Dashboard() {
                           📞 Ligar
                         </a>
                       )}
-                    </div>
-
-                    <div style={{ fontSize: '0.75rem', color: '#aaa', marginBottom: 4 }}>
-                      💳 {pedido.pagamento}
-                    </div>
 
                     {perfil === 'motoboy' ? (
                       pedido.statusPedido === 'Saiu para entrega' ? (
@@ -772,8 +768,9 @@ export default function Dashboard() {
                         )}
                       </>
                     )}
-                  </div>
-                </div>
+                    </div>{/* fim ações col-direita */}
+                  </div>{/* fim pedido-col-direita */}
+                </div>{/* fim pedido-card-body */}
 
                 {pedido.statusPedido === 'Cancelado' && pedido.cancelamento?.motivoCancelamento && (
                   <div className="pedido-cancelamento-info">

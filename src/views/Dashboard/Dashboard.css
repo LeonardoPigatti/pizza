@@ -205,96 +205,118 @@
 
 /* ── Body do card ── */
 .pedido-card-body {
-  padding: 14px 18px;
+  padding: 16px 18px;
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 0;
   align-items: start;
-  border-top: 1px solid #f5f5f5;
 }
 
 .pedido-itens {
-  padding: 4px 16px 14px 0;
+  padding: 0 16px 0 0;
   border-right: 1px solid #f5f5f5;
 }
 
 .pedido-item-linha {
   font-size: 0.85rem;
   color: #555;
-  margin-bottom: 4px;
+  margin-bottom: 6px;
   line-height: 1.4;
 }
 
-.pedido-item-linha strong {
-  color: #1a1a1a;
-}
+.pedido-item-linha strong { color: #1a1a1a; }
 
 .pedido-item-detalhe {
   font-size: 0.75rem;
   color: #aaa;
+  margin-top: 1px;
 }
 
-/* Coluna direita: contato+pagamento+ligar à esquerda, preço+ações à direita */
+/* ── Coluna direita ── */
 .pedido-card-direita {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  grid-template-areas:
-    "contato  preco"
-    "contato  pagamento"
-    "ligar    acoes"
-    "ligar    acoes";
-  gap: 4px 20px;
-  padding: 4px 0 14px 16px;
-  align-items: start;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 0 0 0 16px;
 }
 
-.pedido-ligar-area {
-  grid-area: ligar;
+/* Linha: contato + valores */
+.pedido-direita-topo {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 12px;
+}
+
+.pedido-contato {
+  font-size: 0.8rem;
+  color: #888;
+  line-height: 1.6;
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+.pedido-contato strong { color: #1a1a1a; font-size: 0.88rem; font-weight: 700; }
+
+.pedido-valores {
+  text-align: right;
+  flex-shrink: 0;
+}
+.pedido-valor-linha {
+  font-size: 0.72rem;
+  color: #aaa;
+  line-height: 1.6;
+}
+.pedido-valor-linha.desconto { color: #16a34a; font-weight: 600; }
+.pedido-valor-total {
+  font-size: 1rem;
+  font-weight: 900;
+  color: #e03c1f;
+  margin-top: 2px;
+}
+
+/* Linha: pagamento */
+.pedido-pagamento-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 0.74rem;
+  color: #888;
+  background: #f5f5f5;
+  border-radius: 6px;
+  padding: 3px 8px;
+  width: fit-content;
+}
+
+/* Linha: ações (botões) */
+.pedido-acoes {
   display: flex;
   flex-direction: column;
   gap: 6px;
 }
 
-.pedido-contato {
-  grid-area: contato;
-  font-size: 0.78rem;
-  color: #888;
-  line-height: 1.7;
+.pedido-acoes-linha {
   display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  gap: 2px;
-}
-.pedido-contato strong { color: #333; display: block; font-size: 0.82rem; }
-
-.pedido-pagamento-info {
-  font-size: 0.75rem;
-  color: #aaa;
+  gap: 6px;
 }
 
-.pedido-preco-info {
-  grid-area: preco;
-  font-size: 0.95rem;
-  font-weight: 800;
-  color: #e03c1f;
-  text-align: right;
+.pedido-acoes .select-status,
+.pedido-acoes .btn-proximo-status,
+.pedido-acoes .btn-chat,
+.pedido-acoes .btn-cancelar-pedido,
+.pedido-acoes .btn-pegou,
+.pedido-acoes .btn-mapa,
+.pedido-acoes .btn-ligar {
+  width: 100%;
+  margin-top: 0;
 }
 
-.pedido-acoes {
-  grid-area: acoes;
-  display: flex;
-  flex-direction: column;
-  gap: 7px;
-  align-items: stretch;
+.pedido-acoes .btn-ligar {
+  display: block;
+  text-align: center;
 }
 
-.pedido-acoes .select-status      { width: 100%; margin-top: 0; }
-.pedido-acoes .btn-proximo-status { width: 100%; margin-top: 0; }
-.pedido-acoes .btn-chat           { width: 100%; margin-top: 0; }
-.pedido-acoes .btn-pegou          { width: 100%; }
-.pedido-acoes .btn-mapa           { width: 100%; margin-top: 0; }
-.pedido-acoes .btn-ligar          { width: 100%; margin-top: 0; display: block; text-align: center; }
-.pedido-acoes .badge-pegou        { text-align: center; }
+.pedido-acoes .badge-pegou { text-align: center; }
 
 /* ── Loading / Erro / Vazio ── */
 .dashboard-loading,
@@ -796,3 +818,140 @@
 .menu-admin-item.fechar-loja:hover { background: #fef2f2; }
 .menu-admin-item.abrir-loja  { color: #16a34a; }
 .menu-admin-item.abrir-loja:hover  { background: #f0fdf4; }
+
+/* ── Layout de colunas do card ── */
+.pedido-card-body {
+  display: flex;
+  gap: 0;
+  padding: 0;
+  align-items: stretch;
+}
+
+.pedido-col-esquerda {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  min-width: 0;
+  padding: 14px 16px 14px 18px;
+  border-right: 1px solid #f5f5f5;
+}
+
+.pedido-col-direita {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  align-items: stretch;
+  min-width: 200px;
+  flex-shrink: 0;
+  padding: 14px 18px 14px 16px;
+}
+
+/* Itens */
+.pedido-itens { display: flex; flex-direction: column; gap: 4px; }
+
+/* Contato */
+.pedido-contato {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  font-size: 0.8rem;
+  color: #888;
+  padding-top: 8px;
+  border-top: 1px solid #f5f5f5;
+}
+.pedido-contato strong {
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: #333;
+}
+
+/* Valores */
+.pedido-valores {
+  background: #fafafa;
+  border: 1px solid #f0f0f0;
+  border-radius: 10px;
+  padding: 10px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+.pedido-valores-linha {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.78rem;
+  color: #888;
+}
+.pedido-valores-linha.desconto { color: #16a34a; font-weight: 600; }
+.pedido-valores-linha.total {
+  font-size: 0.92rem;
+  font-weight: 800;
+  color: #e03c1f;
+  border-top: 1px dashed #e8e8e8;
+  margin-top: 4px;
+  padding-top: 5px;
+}
+.pedido-valores-pagamento {
+  font-size: 0.72rem;
+  color: #bbb;
+  margin-top: 4px;
+}
+
+/* Botões da coluna direita — todos full width */
+.pedido-col-direita .btn-proximo-status,
+.pedido-col-direita .btn-chat,
+.pedido-col-direita .btn-cancelar-pedido,
+.pedido-col-direita .btn-pegou,
+.pedido-col-direita .btn-mapa,
+.pedido-col-direita .btn-ligar,
+.pedido-col-direita .select-status {
+  width: 100%;
+  margin-top: 0;
+  box-sizing: border-box;
+}
+.pedido-col-direita .btn-ligar { display: block; text-align: center; }
+.pedido-col-direita .badge-pegou,
+.pedido-col-direita .badge-aguardando-retirada { text-align: center; }
+
+/* Status info (motoboy) */
+.pedido-status-info {
+  font-size: 0.75rem;
+  color: #bbb;
+  font-style: italic;
+  text-align: center;
+}
+
+/* ── Cancelamento ── */
+.pedido-status-badge.cancelado {
+  background: #fef2f2;
+  color: #ef4444;
+  border: 1px solid #fecaca;
+}
+
+.btn-cancelar-pedido {
+  width: 100%;
+  background: #fef2f2;
+  color: #ef4444;
+  border: 1.5px solid #fecaca;
+  border-radius: 10px;
+  padding: 8px 12px;
+  font-size: 0.82rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 0.15s;
+  margin-top: 4px;
+}
+.btn-cancelar-pedido:hover { background: #fee2e2; }
+
+.pedido-cancelamento-info {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 10px 14px;
+  background: #fef2f2;
+  border-top: 1px solid #fecaca;
+  border-radius: 0 0 12px 12px;
+}
+.cancelamento-icone { font-size: 1.1rem; flex-shrink: 0; }
+.cancelamento-titulo { font-size: 0.78rem; font-weight: 700; color: #ef4444; }
+.cancelamento-motivo { font-size: 0.78rem; color: #999; margin-top: 2px; font-style: italic; }
