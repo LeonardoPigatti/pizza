@@ -5,7 +5,7 @@ const http       = require('http');
 const { Server } = require('socket.io');
 const { conectarBanco } = require('./config/database');
 
-const produtoRoutes   = require('./routes/produto.routes');
+const produtoRoutes   = require('./routes/Produto.routes');
 const pedidoRoutes    = require('./routes/pedido.routes');
 const pizzariaRoutes  = require('./routes/pizzaria.routes');
 const authRoutes      = require('./routes/auth.routes');
