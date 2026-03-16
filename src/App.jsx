@@ -1,12 +1,13 @@
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import Cardapio       from './views/Cardapio/Cardapio.jsx';
 import CheckoutPage   from './views/Checkout/CheckoutPage.jsx';
-import StatusPedido   from './views/Status/Statuspedido.jsx';
+import StatusPedido   from './views/Status/StatusPedido.jsx';
 import Login          from './views/Login/Login.jsx';
 import Dashboard      from './views/Dashboard/Dashboard.jsx';
 import PerfilPizzaria  from './views/PerfilPizzaria/PerfilPizzaria.jsx';
 import CardapioAdmin  from './views/CardapioAdmin/Cardapioadmin.jsx';
 import PainelAnalitico from './views/PainelAnalitico/PainelAnalitico.jsx';
+import FAQ           from './views/FAQ/FAQ.jsx';
 import EsqueciSenha     from './views/Login/EsqueciSenha.jsx';
 import RedefinirSenha from './views/Login/RedefinirSenha.jsx';
 
@@ -21,7 +22,8 @@ export default function App() {
         <Route path="/dashboard/:pizzariaId"      element={<Dashboard />} />
         <Route path="/perfil/:pizzariaId"         element={<PerfilPizzaria />} />
         <Route path="/cardapio-admin/:pizzariaId" element={<CardapioAdmin />} />
-        <Route path="/painel/:pizzariaId"         element={<PainelAnalitico />} />
+        <Route path="/painel/:pizzariaId"          element={<PainelAnalitico />} />
+        <Route path="/faq/:pizzariaId"              element={<FAQ />} />
         <Route path="/esqueci-senha"              element={<EsqueciSenha />} />
         <Route path="/redefinir-senha"            element={<RedefinirSenha />} />
 

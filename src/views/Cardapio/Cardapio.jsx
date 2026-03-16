@@ -197,6 +197,9 @@ export default function Cardapio() {
                 <span className="banner-info">🕒 {pizzaria.horarios.abertura} – {pizzaria.horarios.fechamento}</span>
               )}
             </div>
+            <button className="banner-faq-btn" onClick={() => navigate(`/faq/${pizzariaId}`)}>
+              ❓ Dúvidas frequentes
+            </button>
           </div>
         </div>
       </div>
@@ -206,7 +209,7 @@ export default function Cardapio() {
         <div className="busca-inner">
           <div className="busca-input-wrapper">
             <span className="busca-icon">🔍</span>
-            <input className="busca-input" type="text" placeholder={categoriaAtiva === 'Todas' ? 'Explore nosso cardápio completo' : `Buscar em ${categoriaAtiva}...`}
+            <input className="busca-input" type="text" placeholder={categoriaAtiva === 'Todas' ? 'Buscar no cardápio...' : `Buscar em ${categoriaAtiva}...`}
               value={busca} onChange={e => setBusca(e.target.value)} />
           </div>
         </div>
