@@ -5,7 +5,7 @@ import StatusPedido   from './views/Status/StatusPedido.jsx';
 import Login          from './views/Login/Login.jsx';
 import Dashboard      from './views/Dashboard/Dashboard.jsx';
 import PerfilPizzaria  from './views/PerfilPizzaria/PerfilPizzaria.jsx';
-import CardapioAdmin  from './views/CardapioAdmin/Cardapioadmin.jsx';
+import CardapioAdmin  from './views/CardapioAdmin/CardapioAdmin.jsx';
 import PainelAnalitico from './views/PainelAnalitico/PainelAnalitico.jsx';
 import FAQ           from './views/FAQ/FAQ.jsx';
 import EsqueciSenha     from './views/Login/EsqueciSenha.jsx';
