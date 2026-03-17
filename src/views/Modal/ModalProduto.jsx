@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import './Modalpizza.css';
+import './ModalPizza.css';
 
 function formatarPreco(valor) {
   return `R$ ${Number(valor).toFixed(2).replace('.', ',')}`;
