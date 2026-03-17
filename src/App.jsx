@@ -1,7 +1,7 @@
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import Cardapio       from './views/Cardapio/Cardapio.jsx';
 import CheckoutPage   from './views/Checkout/CheckoutPage.jsx';
-import StatusPedido   from './views/Status/StatusPedido.jsx';
+import StatusPedido   from './views/Status/Statuspedido.jsx';
 import Login          from './views/Login/Login.jsx';
 import Dashboard      from './views/Dashboard/Dashboard.jsx';
 import PerfilPizzaria  from './views/PerfilPizzaria/PerfilPizzaria.jsx';
