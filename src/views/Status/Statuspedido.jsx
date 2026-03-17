@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import './Statuspedido.css';
+import './StatusPedido.css';
 import Chat from '../Chat/Chat.jsx';
 import { useChat } from '../Chat/useChat.js';
 
