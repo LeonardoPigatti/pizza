@@ -2,7 +2,7 @@ import { useState, useEffect, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import './Cardapio.css';
 import ModalPizza from '../Modal/Modalpizza.jsx';
-import ModalProduto from '../Modal/ModalProduto.jsx';
+import ModalProduto from '../Modal/Modalproduto.jsx';
 import Carrinho, { CarrinhoFAB } from '../Carrinho/Carrinho.jsx';
 import { useCarrinho } from '../Carrinho/Usecarrinho.js';
 
