@@ -2,24 +2,27 @@
 
 > Plataforma completa de pedidos online com painel administrativo, rastreamento em tempo real e análises financeiras.
 
----
-
 ## 📸 Screenshots
 
-| Cardápio | Dashboard Admin | Status do Pedido |
-|----------|-----------------|------------------|
-| ![Cardápio](./docs/screenshots/cardapio.png) | ![Dashboard](./docs/screenshots/dashboard.png) | ![Status](./docs/screenshots/status.png) |
+### 🧾 Cardápio & Pedido
+| Cardápio | Adicionar ao Carrinho | Carrinho |
+|----------|----------------------|----------|
+| <img src="https://github.com/user-attachments/assets/4ea46c97-f038-4b05-b9ee-d8307bca000f" width="100%"/> | <img src="https://github.com/user-attachments/assets/b6d8cf12-7a3b-455a-84f3-26b842ed95ba" width="100%"/> | <img src="https://github.com/user-attachments/assets/f0c2f70c-37ab-47fd-8e25-298bd9d7b24e" width="100%"/> |
 
----
+### 🍕 Personalização & Fluxo do Pedido
+| Configuração da Pizza | Resumo do Pedido | Status do Pedido |
+|----------------------|------------------|------------------|
+| <img src="https://github.com/user-attachments/assets/c0fa34e6-68e4-4da3-92a8-84bf14798682" width="100%"/> | <img src="https://github.com/user-attachments/assets/4b882830-6f2d-4897-a7a7-2b5d98bde6fc" width="100%"/> | <img src="https://github.com/user-attachments/assets/17c7a07a-9bf7-4faf-8fd2-2e974eb0f5fe" width="100%"/> |
 
-## 🚀 Demo
+### 🛠️ Painel Administrativo
+| Dashboard | Edição da Pizzaria | Edição do Cardápio |
+|-----------|-------------------|--------------------|
+| <img src="https://github.com/user-attachments/assets/86bb9af4-339f-45e1-85be-3ba32654fff0" width="100%"/> | <img src="https://github.com/user-attachments/assets/eebded7a-fef1-4ec9-a5d0-40deae0f7c0d" width="100%"/> | <img src="https://github.com/user-attachments/assets/95bf9210-fcef-41bd-bf59-b14045424e44" width="100%"/> |
 
-🔗 **[Ver demo ao vivo →](https://seu-dominio.com)**
-
-| Perfil | Email | Senha |
-|--------|-------|-------|
-| Admin | admin@demo.com | demo123 |
-| Motoboy | motoboy@demo.com | demo123 |
+### 🔐 Acesso
+| Login |
+|-------|
+| <img src="https://github.com/user-attachments/assets/8ad95c48-7ca4-4fb8-84a9-7177c5abc261" width="100%"/> |
 
 ---
 
@@ -304,10 +307,9 @@ Este projeto foi desenvolvido como um **SaaS multi-tenant** para pizzarias:
 
 ## 👨‍💻 Autor
 
-Desenvolvido por **[Seu Nome]**
+Desenvolvido por **Leonardo Pigatti**
 
-[![LinkedIn](https://img.shields.io/badge/LinkedIn-0077B5?style=flat&logo=linkedin&logoColor=white)](https://linkedin.com/in/seu-perfil)
-[![GitHub](https://img.shields.io/badge/GitHub-181717?style=flat&logo=github&logoColor=white)](https://github.com/seu-usuario)
+[![LinkedIn](https://img.shields.io/badge/LinkedIn-0077B5?style=flat&logo=linkedin&logoColor=white)]([https://linkedin.com/in/seu-perfil](https://www.linkedin.com/in/leonardo-pigatti-6bb369206/))
 
 ---
 
