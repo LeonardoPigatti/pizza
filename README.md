@@ -1,4 +1,4 @@
-# 🍕 PizzaApp — SaaS de Gestão para Pizzarias
+# 🍕 Food Ordering SaaS Platform — SaaS de Gestão para Pizzarias
 
 > Plataforma completa de pedidos online com painel administrativo, rastreamento em tempo real e análises financeiras.
 
